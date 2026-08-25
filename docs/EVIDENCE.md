@@ -63,6 +63,15 @@ One component capability was replaced with an opaque tombstone. No firmware leaf
 and the chain never learned which firmware contained that component — yet exactly the dependent
 device lost the ability to prove compliance, and the clean one did not.
 
+### Reproduced on the final build
+
+The whole sequence was run a second time against the shipped code (2026-08-25 13:12 UTC) to
+confirm nothing regressed after the last round of fixes. Component revocation
+`c9894a3061f202efafda870567a4a6bfd55567f28ddaee9ce6f92ce3e0a619b9`; the stale proof was again
+refused by the ledger, the firmware root was again unchanged, and the dashboard recorded the
+rejection with `viaLedger: true` — the flag that lets the card say "refused by consensus"
+without inferring it from error text.
+
 ### Two distinct failure modes, deliberately
 
 - **Selective FAIL** happens *before* a transaction exists: the prover cannot find a current
