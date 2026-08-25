@@ -5,21 +5,22 @@
 
 ## Phase D — kill the deploy gate (NOW)
 - [x] Faucet funding confirmed — 5,000 tNIGHT; faucet tx recorded in docs/EVIDENCE.md
-- [~] DUST registration — submitted via `npm run cli -- dust`; confirm `npm run cli -- balance` shows `DUST > 0` before deploying
+- [x] DUST registration confirmed — balance accrued and fees paying successfully
 - [x] Proof server healthy on :6300 (Windows docker engine; reachable from WSL too — verified)
 - [x] Proving keys regenerated after tree alignment (~27 MB, all four circuits)
 - [x] **Deployed to Preview** — `160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e` (2026-08-25 ~16:16 IST; deployment.json committed)
-- [~] Baseline bootstrap — first attempt hit the indexer-lag wrinkle (runbook §2 note); `npm run cli -- approve` retry running in background, log `/root/nightseal/logs/approve.log`
+- [x] **Baseline bootstrap complete** — 9 transactions on-chain (3 registrations + 4 components + 2 builds), epoch 7; hashes in docs/EVIDENCE.md. Took 4 attempts: two real infra bugs found and fixed (duplicate WASM runtime; private-state address scoping)
 - [x] Contract address + explorer link in the README deployment block and docs/SUBMISSION.md
-- [ ] Live lifecycle per runbook §3; replace every `pending` row in docs/EVIDENCE.md, including the failed-attempt error text
+- [x] Beat 1 PASS captured — both devices attested on-chain at epoch 7 (hashes in docs/EVIDENCE.md)
+- [ ] Beats 2–4: revoke + clean recovery + selective fail + consensus replay; fill remaining docs/EVIDENCE.md rows
 - [ ] Explorer screenshots (contract + root-update tx) saved to docs/
 - [ ] Record raw footage of every beat **while** doing the above — never bet on one final take
 
-## Phase B — consensus-evidence upgrade (deploy-safe; start only after footage is secured)
-- [ ] Held-transaction stale replay, per the sketch in docs/improvementsByClaude.md §STATUS (timebox ~90 min; the fallback there is acceptable)
-- [ ] `replay <device>` CLI verb + dashboard "Replay stale proof" control; surface the node's rejection verbatim
-- [ ] Verify on Preview; add the rejected replay to docs/EVIDENCE.md; upgrade GAPS + ARCHITECTURE decision 7 wording to the stronger claim
-- [ ] Record optional Beat 3b footage (docs/DEMO_SCRIPT.md)
+## Phase B — consensus-evidence upgrade (deploy-safe)
+- [x] Held-transaction stale replay implemented — capture at `balanceTx` (proven but unbalanced, so the revocation keeps its fee funds), then balance + submit after the roots move
+- [x] `replay <device> <component>` CLI verb + `/api/replay/:device/:component` route + dashboard "Revoke + replay stale proof" control
+- [ ] **Verify on Preview** (the one remaining unknown); then add the rejected replay to docs/EVIDENCE.md and upgrade GAPS + ARCHITECTURE decision 7 to the stronger claim
+- [ ] Record Beat 3b footage (docs/DEMO_SCRIPT.md)
 
 ## Phase F — final submission
 - [ ] ~3-min video per docs/DEMO_SCRIPT.md (include Beat 3b only if Phase B landed)

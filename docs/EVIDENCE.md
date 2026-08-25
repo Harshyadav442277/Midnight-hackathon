@@ -40,7 +40,8 @@ rotation: every one is `update*Leaf(value, index)` carrying an opaque 32-byte va
 | Beat | Expected cryptographic state | Transaction / evidence |
 |---|---|---|
 | Deploy + bootstrap | registered device commitments; firmware and component roots populated | ✅ above — 9 transactions, epoch 7 |
-| PASS | registered identity + firmware + three components prove current | pending |
+| PASS (clean device) | registered identity + firmware + three components prove current | ✅ `73dea0b0f198c8033eb7e90f796b871819574bc2adc4a36869b264dcf95ab0e7` |
+| PASS (device that secretly depends on TLS 3.0) | same three gates; nothing on-chain distinguishes it from the clean device | ✅ `c591dc427fe530c56661f0db56281a072134d01385e85c935c5c64d7fca43a99` |
 | Opaque component update | component root and epoch move; firmware root stays unchanged | pending |
 | Clean recovery | unaffected device re-attests at new epoch | pending |
 | Selective FAIL | affected device cannot resolve a current component path; no tx is submitted | pending error capture |

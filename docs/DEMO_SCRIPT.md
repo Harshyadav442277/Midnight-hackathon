@@ -75,20 +75,19 @@ Point at the red card's own note: nothing was written on-chain, because proving 
 
 ---
 
-## OPTIONAL Beat 3b (~10s) — only if the held-transaction upgrade landed
+## Beat 3b (~15s) — the chain itself refuses a stale proof
 
-*Skip this beat entirely unless the consensus-evidence upgrade
-([improvementsByClaude.md](improvementsByClaude.md) §STATUS/B) is implemented and verified on
-Preview. Never claim an on-chain rejection without it.*
+Use the **Revoke + replay stale proof** button on *TLS Runtime 3.0* instead of the plain revoke
+button. It proves an attestation while the component is still approved, revokes the component,
+then submits that now-stale proof for real.
 
-Action: trigger **Replay stale proof** for *Router · fleet-07* — a transaction proven against the
-pre-CVE roots is submitted for real.
+> "One more thing. This proof was generated *before* the revocation, and it is perfectly valid —
+> it honestly proves a path to the roots that existed a moment ago. We submit it anyway. The
+> Midnight ledger re-checks those roots against the present and refuses it. That rejection is
+> not our server's opinion. It is consensus."
 
-> "One more thing. Here is a perfectly valid proof — generated before the revocation. We submit
-> it, and the ledger itself refuses it: the root it proves against no longer exists. Not our
-> server saying no. The chain."
-
-Show the node's rejection in the log panel.
+Show the rejection in the transaction log panel. This is the strongest evidence in the demo:
+the failure is produced by the chain, with no application logic involved.
 
 ---
 
