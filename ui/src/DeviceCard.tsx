@@ -20,17 +20,24 @@ const BY_STATUS: Record<DeviceView['status'], Presentation> = {
   },
 };
 
+/** A replayed proof is refused by consensus; an ordinary one cannot even be built. */
+const rejectedByLedger = (device: DeviceView): boolean =>
+  device.lastAttempt?.error?.includes('ledger') ?? false;
+
 /**
  * A device whose most recent attempt against the *current* baseline was rejected is
- * shown as non-compliant. The rejection is an attempt record from the operator
- * service, not ledger state — the card says so.
+ * shown as non-compliant. Where that rejection happened matters: only a replayed proof
+ * reaches the chain, so the card must not claim consensus refused an attestation that
+ * was never submitted.
  */
 const presentationFor = (device: DeviceView, baselineEpoch: string): Presentation => {
   const attempt = device.lastAttempt;
   if (attempt && !attempt.ok && attempt.epoch === baselineEpoch && device.status !== 'COMPLIANT') {
     return {
       pill: 'NON-COMPLIANT',
-      blurb: 'Proof rejected: its firmware or a privately bound component is no longer current.',
+      blurb: rejectedByLedger(device)
+        ? 'A proof valid a moment ago was submitted and refused by the Midnight ledger.'
+        : 'Proof rejected: its firmware or a privately bound component is no longer current.',
       tone: 'bad',
     };
   }
@@ -92,8 +99,17 @@ export const DeviceCard = ({
 
       {tone === 'bad' && (
         <p className="attempt-note">
-          Proof rejected locally — nothing was written on-chain. Proving <em>non</em>-membership is
-          precisely what NightSeal avoids.
+          {rejectedByLedger(device) ? (
+            <>
+              Rejected by consensus, not by this dashboard: the roots the proof commits to are no
+              longer current, so the ledger refused the transaction.
+            </>
+          ) : (
+            <>
+              Proof rejected locally — nothing was written on-chain. Proving <em>non</em>-membership
+              is precisely what NightSeal avoids.
+            </>
+          )}
         </p>
       )}
 
