@@ -6,16 +6,19 @@ import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 import { PREVIEW, explorerContract } from './config.ts';
 import { loadEnv, seedFor } from './env.ts';
-import { BUILDS, DEVICES, buildById, deviceById } from './fleet.ts';
+import { BUILDS, COMPONENTS, DEVICES, buildById, componentById, deviceById } from './fleet.ts';
 import { logger } from './logger.ts';
 import { buildProviders } from './providers.ts';
 import {
   approveAllBuilds,
+  approveAllComponents,
   attestDevice,
   deployRegistry,
   loadDeployment,
   readPublicState,
+  registerAllDevices,
   revokeBuild,
+  revokeComponent,
 } from './registry.ts';
 import { NightSealWallet } from './wallet.ts';
 
@@ -29,12 +32,15 @@ Setup
 
 Registry
   npm start -- deploy             deploy the registry and publish the approved baseline
-  npm start -- approve            (re)publish every known firmware build as approved
+  npm start -- approve            (re)publish device, firmware, and component capabilities
   npm start -- revoke <buildId>   revoke a build — the CVE moment
+  npm start -- revoke-component <componentId>
+                                  privately cascade a component CVE into affected firmware
   npm start -- attest <deviceId>  a device proves its firmware is in the baseline
   npm start -- status             show the public compliance state an auditor sees
 
   builds:  ${BUILDS.map((b) => b.id).join(', ')}
+  components: ${COMPONENTS.map((c) => c.id).join(', ')}
   devices: ${DEVICES.map((d) => d.id).join(', ')}
 `;
 
@@ -70,6 +76,7 @@ const printStatus = async (
   const state = await readPublicState(providers, contractAddress, DEVICES);
   console.log(`\n  Baseline epoch : ${state.baselineEpoch}`);
   console.log(`  Approved root  : ${state.approvedRoot}`);
+  console.log(`  Component root : ${state.componentRoot}`);
   console.log('  ─────────────────────────────────────────────────────────');
   for (const d of state.devices) {
     const epoch = d.epoch === null ? '—' : String(d.epoch);
@@ -110,6 +117,8 @@ const main = async (): Promise<void> => {
       await withChain(async ({ providers, seed }) => {
         const deployed = await deployRegistry(providers, seed);
         const address = deployed.deployTxData.public.contractAddress;
+        await registerAllDevices(providers, address, seed);
+        await approveAllComponents(providers, address, seed);
         await approveAllBuilds(providers, address, seed);
         await printStatus(providers, address);
       });
@@ -118,7 +127,22 @@ const main = async (): Promise<void> => {
     case 'approve':
       await withChain(async ({ providers, seed }) => {
         const { contractAddress } = loadDeployment();
+        await registerAllDevices(providers, contractAddress, seed);
+        await approveAllComponents(providers, contractAddress, seed);
         await approveAllBuilds(providers, contractAddress, seed);
+        await printStatus(providers, contractAddress);
+      });
+      break;
+
+    case 'revoke-component':
+      if (!arg) {
+        throw new Error(
+          `Usage: npm start -- revoke-component <${COMPONENTS.map((c) => c.id).join('|')}>`,
+        );
+      }
+      await withChain(async ({ providers, seed }) => {
+        const { contractAddress } = loadDeployment();
+        await revokeComponent(providers, contractAddress, seed, componentById(arg));
         await printStatus(providers, contractAddress);
       });
       break;
@@ -134,9 +158,9 @@ const main = async (): Promise<void> => {
 
     case 'attest':
       if (!arg) throw new Error(`Usage: npm start -- attest <${DEVICES.map((d) => d.id).join('|')}>`);
-      await withChain(async ({ providers }) => {
+      await withChain(async ({ providers, seed }) => {
         const { contractAddress } = loadDeployment();
-        await attestDevice(providers, contractAddress, deviceById(arg));
+        await attestDevice(providers, contractAddress, deviceById(arg), seed);
         await printStatus(providers, contractAddress);
       });
       break;
