@@ -54,7 +54,8 @@ export const App = (): React.ReactElement => {
         const res = await fetch(path, { method: 'POST' });
         const body = (await res.json()) as ActionResult;
         if (body.ok) {
-          setLog((l) => [{ text: `${label} — confirmed`, href: body.explorer }, ...l].slice(0, 6));
+          const text = body.message ?? `${label} — confirmed`;
+          setLog((l) => [{ text, href: body.explorer }, ...l].slice(0, 6));
         } else {
           setLog((l) => [{ text: `${label} — rejected: ${body.error}`, bad: true }, ...l].slice(0, 6));
         }

@@ -226,6 +226,10 @@ verifiable disclosure of one build — never a bulk dump."
 
 ## 3. Selection and sequencing against the deadline
 
+> **Historical — resolved.** Both A and B shipped and are verified on-chain; the decision
+> rules below are kept only to show how the call was made. Current state is the STATUS table
+> at the top of this document.
+
 **Flagship extra: A. Secondary: B. Stretch: C.** D and E land whenever there is idle
 time; they risk nothing.
 

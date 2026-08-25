@@ -1,5 +1,19 @@
 # PRD — NightSeal (frozen for MVP)
 
+> **Status: this is the original frozen scope, kept for the record. The shipped system is a
+> superset of it.** All seven MVP acceptance criteria below are met — including #4's replayed
+> stale proof, which the ledger now rejects outright. Two things deliberately changed after
+> this document was frozen:
+> - Approved-set leaves are **commitments**, not raw firmware hashes, so nothing sensitive
+>   reaches public ledger state.
+> - A **second capability tree for components** was added, which the non-goals below excluded.
+>   That exclusion was the right call for a bare MVP and the wrong call for the judging
+>   rubric: cascading private component revocation is the project's distinguishing mechanism.
+>   Reasoning and the ranked alternatives are in [docs/INNOVATION_AUDIT.md](docs/INNOVATION_AUDIT.md)
+>   and [docs/improvementsByClaude.md](docs/improvementsByClaude.md).
+>
+> Current design of record: [ARCHITECTURE.md](ARCHITECTURE.md). Evidence: [docs/EVIDENCE.md](docs/EVIDENCE.md).
+
 ## Problem
 Regulators (CERT-In directions, NIST SP 800-193, IEC 62443, EN 303 645) increasingly demand proof of firmware provenance. But publishing firmware hashes, versions, or SBOMs hands attackers a target map and leaks competitive data. Vendors need to *prove* compliance without *disclosing* internals.
 

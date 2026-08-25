@@ -194,6 +194,8 @@ const handle = async (
         at: new Date().toISOString(),
         epoch,
       });
+      // A rejection is the expected, desirable outcome here, so it is reported as success
+      // with an explicit message — "ok" alone would read as "the replay went through".
       return {
         status: 200,
         body: {
@@ -201,6 +203,9 @@ const handle = async (
           revokeTxHash,
           explorer: explorerTx(revokeTxHash),
           ledgerAccepted: verdict.accepted,
+          message: verdict.accepted
+            ? `${device.label}: the ledger ACCEPTED a stale proof — this should not happen`
+            : `${device.label}: stale proof REJECTED by the Midnight ledger — ${verdict.detail}`,
           error: verdict.accepted ? undefined : verdict.detail,
         },
       };
@@ -272,6 +277,12 @@ const main = async (): Promise<void> => {
     deployment = { contractAddress, network: 'preview', deployedAt: new Date().toISOString() };
   } else {
     logger.info(`Using existing registry ${deployment.contractAddress}`);
+    // deployment.json is committed, so a fresh clone reuses the published registry. Reading
+    // it works for anyone; operating it needs the seed that deployed it.
+    logger.info(
+      'If this registry is not one you deployed, the dashboard still reads it fine, but ' +
+        'approve/revoke/attest will be refused. Run:  npm run cli -- deploy',
+    );
   }
   const { contractAddress } = deployment;
 

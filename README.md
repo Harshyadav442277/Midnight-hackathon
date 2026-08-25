@@ -33,14 +33,14 @@ The point is the middle row. A regulator can demand proof of firmware provenance
 
 ---
 
-## The three-beat demo
+## The demo, in four beats
 
 1. **Pass.** A registered device attests through three simultaneous proof gates: device-secret ownership, current firmware membership, and current membership of all three privately bound components. The dashboard turns green; the explorer reveals none of those secrets.
 2. **Revoke.** A CVE drops in one component. The operator removes that opaque component capability. The **component root moves while the firmware root stays unchanged**, and the policy epoch increments.
 3. **Fail.** Both devices re-attest. The unaffected device goes green again. The secretly dependent device **cannot produce a valid proof at all**—its firmware leaf still exists, but one component path no longer does. It goes red; the chain sees the policy epoch move, but not which component, firmware, or dependency caused it.
 4. **Rejected by consensus.** A proof built *before* the revocation—honest, valid, fully verifying—is submitted afterwards anyway. The ledger re-checks the roots recorded in its transcript against present state and **refuses the transaction itself**. The failure is a chain verdict, not an application decision.
 
-The difference between beats 2 and 3 is produced by cryptography, not by application logic.
+Nothing here is application logic deciding who passes. In beat 3 the affected device cannot build a proof; in beat 4 the chain refuses one it did build.
 
 ---
 
@@ -103,7 +103,13 @@ npm run cli -- address        # fund this address at the Preview faucet, then: n
 npm run serve                 # dashboard + operator service on http://localhost:8787
 ```
 
-Point the dashboard at the deployed registry above, or run `npm run cli -- deploy` to stand up your own.
+**Two ways to run it, and they answer different questions.**
+
+*Just want to see the live registry?* You need nothing at all — [nightseal.vercel.app](https://nightseal.vercel.app) reads the deployed contract straight from the indexer, with no wallet and no key. That is the product claim made literal.
+
+*Want to drive the lifecycle yourself?* Stand up your own registry — `npm run cli -- deploy`. The committed `deployment.json` points at our contract, and while anyone can *read* it, only the seed that deployed it can approve, revoke, or attest, so a fresh clone must deploy its own before those actions work. Deploying rewrites `deployment.json` for you.
+
+Every CLI command re-syncs the wallet from genesis (a few minutes). For a multi-step demo, start `npm run serve` once and drive it from the dashboard — each action then takes seconds.
 
 **Verify the claims without deploying anything:**
 
@@ -161,7 +167,7 @@ Full engineering ledger: [GAPS.md](GAPS.md) · design rationale and rejected alt
 
 | Path | |
 |---|---|
-| [`contract/src/nightseal.compact`](contract/src/nightseal.compact) | the contract — four circuits, ~180 lines |
+| [`contract/src/nightseal.compact`](contract/src/nightseal.compact) | the contract — 4 transaction circuits + 5 pure helpers, ~180 lines |
 | [`contract/src/test/`](contract/src/test/) | the lifecycle test suite |
 | [`cli/src/`](cli/src/) | headless wallet, providers, registry operations, operator service |
 | [`ui/src/`](ui/src/) | auditor dashboard |

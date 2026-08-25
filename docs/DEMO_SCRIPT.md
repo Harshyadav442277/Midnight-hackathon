@@ -1,4 +1,4 @@
-# DEMO_SCRIPT — ~3 minutes, three beats
+# DEMO_SCRIPT — ~3 minutes, four beats
 
 Film the dashboard and the block explorer **side by side** for the whole middle section. Record each beat as soon as it works; do not bet the submission on one final take.
 

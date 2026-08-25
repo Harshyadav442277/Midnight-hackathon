@@ -30,7 +30,10 @@
 - Test: `npm test` (11 lifecycle/adversarial tests)
 - Build all: `npm run build`
 - Proof server (**Windows**): `docker start nightseal-proof-server` — container exists; health check is `GET /` on :6300, not `/health`
-- CLI: `npm run cli -- <address|balance|dust|deploy|approve|revoke-component <component>|revoke <build>|attest <device>|status>`
+- CLI: `npm run cli -- <address|balance|dust|deploy|approve|revoke-component <component>|revoke <build>|attest <device>|replay <device> <component>|status>`
+  Every CLI command re-syncs the wallet from genesis (~10 min). For multi-step work, start
+  `npm run serve` once and drive it over HTTP (`/api/attest/:id`, `/api/revoke-component/:id`,
+  `/api/replay/:device/:component`, `/api/approve`) — each action then takes seconds.
 - Operator service + dashboard: `npm run serve` → http://localhost:8787
 - UI dev server: `npm run dev --workspace ui`
 

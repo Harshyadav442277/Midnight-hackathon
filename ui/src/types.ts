@@ -51,4 +51,6 @@ export type ActionResult = {
   txHash?: string;
   explorer?: string;
   error?: string;
+  /** Set when "succeeded" is the wrong word — e.g. a stale proof the ledger rightly refused. */
+  message?: string;
 };
