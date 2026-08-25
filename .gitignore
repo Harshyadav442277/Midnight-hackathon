@@ -30,3 +30,6 @@ Thumbs.db
 contract/src/managed/nightseal/keys/
 contract/src/managed/nightseal/zkir/
 contract/src/managed/nightseal/compiler/
+
+# local scratch files
+scratch-*
