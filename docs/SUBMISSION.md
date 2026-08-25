@@ -204,19 +204,25 @@ Supporting links (use in the description if the form allows more):
 
 # Project media
 
-Captured images live in [`docs/media/`](media/). Suggested gallery order:
+Captured images live in [`docs/media/`](media/) (all taken from the live system). Suggested
+gallery order:
 
-1. `dashboard-live.png` — the public auditor view: both devices green, two roots, the
-   "what this page can see" strip.
-2. `operator-panel.png` — the private dependency view with the revoke / replay controls.
-3. `replay-rejected.png` — the red card reading "Rejected by consensus, not by this
-   dashboard" with the ledger-rejection log line. **The money shot.**
-4. `explorer-contract.png` — the deployed contract on the public explorer.
-5. `architecture.png` — the architecture diagram with the out-of-scope hardware band.
-6. `evidence-github.png` — the on-chain evidence table with transaction hashes.
+1. `replay-rejected.png` — **the money shot**: the red NON-COMPLIANT card reading "Rejected by
+   consensus, not by this dashboard", epoch moved 21→22, firmware root visibly unchanged while
+   the component root changed, the neighbor device amber.
+2. `dashboard-live.png` — the public auditor view: both devices green, two roots, the
+   "what this page can see" strip, footer links.
+3. `operator-panel.png` — the private dependency view: four components with affects-counts and
+   the revoke / replay controls the public page never gets.
+4. `architecture.png` — the architecture diagram with the private/public line and the
+   out-of-scope hardware band (2× render of docs/architecture.svg).
+5. `explorer-contract.png` — the deployed contract on the public explorer: DEPLOYED badge,
+   deployment tx, block #574,524.
+6. `explorer-revocation-tx.png` — a revocation transaction on the explorer: SUCCESS, type
+   REGULAR, opaque parameters — silent revocation, visible.
+7. `evidence-github.png` — the on-chain evidence tables rendered on GitHub.
 
-During video recording, also grab stills of: the epoch strip flashing amber; the firmware root
-visibly unchanged while the component root changes.
+During video recording, also grab a still of the epoch strip flashing amber mid-action.
 
 ---
 
