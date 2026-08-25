@@ -6,6 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 
 import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
+import type { FinalizedTransaction } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import {
   NightSealContract,
   createNightSealPrivateState,
@@ -250,6 +251,67 @@ export const attestDevice = async (
   const tx = await contract.callTx.attest(deviceKey(device));
   logger.info(`  attested — tx ${txHashOf(tx)}`);
   return txHashOf(tx);
+};
+
+/**
+ * Prove a device's attestation but keep the finalized transaction instead of sending it.
+ *
+ * The proof is honest — it demonstrates Merkle paths to the roots that are current right
+ * now, and those roots go into the transaction's public transcript. If the baseline moves
+ * before the transaction is applied, the ledger replays that transcript against present
+ * state, its own `checkRoot` query answers differently, and consensus rejects the
+ * transaction. That turns a stale proof's failure into a chain verdict instead of a local
+ * one.
+ */
+export const buildHeldAttestation = async (
+  providers: NightSealProviders,
+  contractAddress: string,
+  device: Device,
+  provisioningSeed: string,
+): Promise<FinalizedTransaction> => {
+  const build = buildForDevice(device);
+  let capture!: (tx: FinalizedTransaction) => void;
+  const held = new Promise<FinalizedTransaction>((resolve) => {
+    capture = resolve;
+  });
+
+  // Only submitTx is swapped; everything else (proving, balancing, signing) is the real
+  // path, so the captured transaction is exactly what the device would have sent. The
+  // cast is needed because the provider bundle is typed to the concrete wallet class.
+  const capturing = {
+    ...providers,
+    midnightProvider: {
+      submitTx: async (tx: FinalizedTransaction): Promise<string> => {
+        capture(tx);
+        return '0'.repeat(64);
+      },
+    },
+  } as unknown as NightSealProviders;
+
+  const contract = await joinRegistry(
+    capturing,
+    contractAddress,
+    deviceState(device, build, provisioningSeed),
+  );
+
+  logger.info(`${device.label} is proving an attestation against the CURRENT baseline...`);
+  // This call then waits for a confirmation that cannot arrive, because nothing was sent.
+  // The captured transaction is the result we want; let the call settle however it likes.
+  void contract.callTx.attest(deviceKey(device)).catch(() => undefined);
+  return held;
+};
+
+/** Send a previously held transaction and report the ledger's verdict. */
+export const submitHeldAttestation = async (
+  providers: NightSealProviders,
+  tx: FinalizedTransaction,
+): Promise<{ accepted: boolean; detail: string }> => {
+  try {
+    const txHash = await providers.midnightProvider.submitTx(tx);
+    return { accepted: true, detail: txHash };
+  } catch (err) {
+    return { accepted: false, detail: err instanceof Error ? err.message : String(err) };
+  }
 };
 
 export type PublicState = {

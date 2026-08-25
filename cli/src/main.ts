@@ -13,12 +13,14 @@ import {
   approveAllBuilds,
   approveAllComponents,
   attestDevice,
+  buildHeldAttestation,
   deployRegistry,
   loadDeployment,
   readPublicState,
   registerAllDevices,
   revokeBuild,
   revokeComponent,
+  submitHeldAttestation,
 } from './registry.ts';
 import { NightSealWallet } from './wallet.ts';
 
@@ -37,6 +39,9 @@ Registry
   npm start -- revoke-component <componentId>
                                   privately cascade a component CVE into affected firmware
   npm start -- attest <deviceId>  a device proves its firmware is in the baseline
+  npm start -- replay <deviceId> <componentId>
+                                  prove an attestation, revoke a component, then submit the
+                                  now-stale proof — the LEDGER rejects it, not the service
   npm start -- status             show the public compliance state an auditor sees
 
   builds:  ${BUILDS.map((b) => b.id).join(', ')}
@@ -87,7 +92,7 @@ const printStatus = async (
 
 const main = async (): Promise<void> => {
   loadEnv();
-  const [command = 'help', arg] = process.argv.slice(2);
+  const [command = 'help', arg, arg2] = process.argv.slice(2);
 
   switch (command) {
     case 'address': {
@@ -164,6 +169,38 @@ const main = async (): Promise<void> => {
         await printStatus(providers, contractAddress);
       });
       break;
+
+    case 'replay': {
+      if (!arg || !arg2) {
+        throw new Error(
+          `Usage: npm start -- replay <${DEVICES.map((d) => d.id).join('|')}> <${COMPONENTS.map((c) => c.id).join('|')}>`,
+        );
+      }
+      const device = deviceById(arg);
+      const component = componentById(arg2);
+      await withChain(async ({ providers, seed }) => {
+        const { contractAddress } = loadDeployment();
+
+        // 1. Prove now, while the component is still approved, and hold the transaction.
+        const held = await buildHeldAttestation(providers, contractAddress, device, seed);
+        logger.info('Proof built and held — valid against the roots current at this moment.');
+
+        // 2. Move the baseline out from under it.
+        await revokeComponent(providers, contractAddress, seed, component);
+
+        // 3. Send the stale-but-honest proof and let consensus judge it.
+        logger.info('Submitting the held proof against the NEW baseline...');
+        const verdict = await submitHeldAttestation(providers, held);
+        if (verdict.accepted) {
+          logger.warn(`Ledger ACCEPTED the stale proof (tx ${verdict.detail}) — investigate.`);
+        } else {
+          logger.info('Ledger REJECTED the stale proof. The chain enforced revocation:');
+          console.log(`\n  ${verdict.detail}\n`);
+        }
+        await printStatus(providers, contractAddress);
+      });
+      break;
+    }
 
     case 'status':
       await withChain(async ({ providers }) => {

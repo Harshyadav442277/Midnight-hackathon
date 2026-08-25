@@ -21,12 +21,14 @@ import {
   approveAllBuilds,
   approveAllComponents,
   attestDevice,
+  buildHeldAttestation,
   deployRegistry,
   findDeployment,
   readPublicState,
   registerAllDevices,
   revokeBuild,
   revokeComponent,
+  submitHeldAttestation,
 } from './registry.ts';
 import { NightSealWallet } from './wallet.ts';
 
@@ -161,6 +163,47 @@ const handle = async (
       revokeComponent(ctx.providers, ctx.contractAddress, ctx.seed, component),
     );
     return { status: 200, body: { ok: true, txHash, explorer: explorerTx(txHash) } };
+  }
+
+  // Consensus evidence: prove an attestation now, move the baseline, then submit the
+  // stale-but-honest proof. The rejection comes from the ledger, not from this service.
+  if (method === 'POST' && path.startsWith('/api/replay/')) {
+    const [deviceId, componentId] = path.slice('/api/replay/'.length).split('/');
+    if (!deviceId || !componentId) {
+      return { status: 400, body: { ok: false, error: 'Usage: /api/replay/<device>/<component>' } };
+    }
+    const device = deviceById(decodeURIComponent(deviceId));
+    const component = componentById(decodeURIComponent(componentId));
+
+    return await serialise(async () => {
+      const held = await buildHeldAttestation(ctx.providers, ctx.contractAddress, device, ctx.seed);
+      const revokeTxHash = await revokeComponent(
+        ctx.providers,
+        ctx.contractAddress,
+        ctx.seed,
+        component,
+      );
+      const epoch = String(
+        (await readPublicState(ctx.providers, ctx.contractAddress, [])).baselineEpoch,
+      );
+      const verdict = await submitHeldAttestation(ctx.providers, held);
+      attempts.set(device.id, {
+        ok: verdict.accepted,
+        error: verdict.accepted ? undefined : `rejected by the Midnight ledger: ${verdict.detail}`,
+        at: new Date().toISOString(),
+        epoch,
+      });
+      return {
+        status: 200,
+        body: {
+          ok: !verdict.accepted,
+          revokeTxHash,
+          explorer: explorerTx(revokeTxHash),
+          ledgerAccepted: verdict.accepted,
+          error: verdict.accepted ? undefined : verdict.detail,
+        },
+      };
+    });
   }
 
   if (method === 'POST' && path === '/api/approve') {
