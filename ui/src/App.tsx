@@ -5,6 +5,7 @@ import { OperatorPanel } from './OperatorPanel.tsx';
 import type { ActionResult, RegistryState } from './types.ts';
 
 const POLL_MS = 3000;
+const REPO = 'https://github.com/Harshyadav442277/Midnight-hackathon';
 
 const shorten = (s: string, head = 10, tail = 8): string =>
   s.length <= head + tail + 1 ? s : `${s.slice(0, head)}…${s.slice(-tail)}`;
@@ -124,8 +125,11 @@ export const App = (): React.ReactElement => {
       {state?.readOnly && (
         <div className="banner note">
           <strong>Auditor view.</strong> This page holds no key and can only read. Everything
-          below came from the public chain — which is the entire point. Approving and revoking
-          firmware needs the operator's key and runs on their own machine.
+          below came from the public chain — which is the entire point: anyone can audit
+          compliance with nothing but a URL, and still sees no firmware data. Approving,
+          revoking, and attesting deliberately run on the operator's own machine, because they
+          need the operator's signing key and a local proof server that handles private
+          witnesses. Publishing that side would hand strangers control of the registry.
         </div>
       )}
 
@@ -183,8 +187,23 @@ export const App = (): React.ReactElement => {
       )}
 
       <footer>
-        Hardware root of trust is the platform's job (NIST SP 800-193, TCG remote attestation).
-        NightSeal is the privacy-preserving transparency layer above it.
+        <p>
+          Hardware root of trust is the platform's job (NIST SP 800-193, TCG remote attestation).
+          NightSeal is the privacy-preserving transparency layer above it.
+        </p>
+        <p className="footer-links">
+          <a href={REPO} target="_blank" rel="noreferrer">
+            Source
+          </a>
+          <a href={`${REPO}/blob/main/docs/EVIDENCE.md`} target="_blank" rel="noreferrer">
+            On-chain evidence
+          </a>
+          {state && (
+            <a href={state.explorer} target="_blank" rel="noreferrer">
+              Contract on the explorer
+            </a>
+          )}
+        </p>
       </footer>
     </div>
   );

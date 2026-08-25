@@ -202,6 +202,10 @@ footer {
   margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line);
   color: var(--ink-faint); font-size: 12.5px; max-width: 82ch;
 }
+footer p { margin: 0; }
+.footer-links { margin-top: 10px !important; display: flex; flex-wrap: wrap; gap: 18px; }
+.footer-links a { color: var(--ink-dim); text-decoration: none; border-bottom: 1px solid var(--line); }
+.footer-links a:hover { color: var(--ink); border-bottom-color: var(--ink-dim); }
 
 @media (max-width: 720px) {
   .masthead { flex-direction: column; gap: 14px; }
