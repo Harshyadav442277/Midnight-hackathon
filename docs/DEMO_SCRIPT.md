@@ -32,6 +32,10 @@ Action: click **Attest now** on *Sensor gateway · 02*.
 - The card turns **green — COMPLIANT**, epoch matching the baseline.
 - Cut to the explorer: the transaction is there.
 
+Point to the device-bound label and the two roots. One proof established three things:
+the prover knows this registered device's secret, the hidden firmware is current, and
+all components privately bound into it are current.
+
 Say, over the explorer view:
 
 > "The chain shows a yes. It never shows the firmware."
@@ -42,13 +46,18 @@ Scroll the public state on screen: a device id, a status, an epoch, a Merkle roo
 
 ## 1:00–2:00 — Beat 2: the CVE, and the money shot
 
-> "A vulnerability lands in one of the approved firmware builds."
+> "A vulnerability lands in a component used by an unknown subset of firmware."
 
-Action: in the operator panel, click **Revoke (CVE)** on *router-fw 2.3.9*.
+Action: in the operator-only panel, click **Revoke component (CVE)** on *TLS Runtime 3.0*.
 
 - The baseline epoch strip **flashes amber** and increments.
+- The **component root changes while the firmware root stays exactly the same**. Say this out loud; it is the flagship visual.
 - Every attested device drops to **RE-ATTESTATION REQUIRED** with a drift count. Say why: the baseline moved, so nobody has proved anything against the new root yet.
 - Cut to the explorer: **the root-update transaction**. Linger here — it is the difference between a described lifecycle and an implemented one.
+
+Say:
+
+> "The chain sees the policy root move, but the same opaque update could be an approval, revocation, or cover rotation. It does not learn which firmware contains the component; the proof circuit discovers the blast radius privately."
 
 ---
 
@@ -60,7 +69,7 @@ Action: click **Attest now** on *Router · fleet-07* → it goes **red, NON-COMP
 
 Say the important sentence:
 
-> "The revoked device isn't being turned away by our application logic. Its firmware commitment is no longer a leaf of the tree, so there is no Merkle path — it cannot construct a passing proof at all."
+> "The failed device's firmware leaf is still approved. The service is not consulting a CVE list: the local prover cannot obtain a path from one bound component to the current component root, so cryptography prevents it from constructing a valid proof."
 
 Point at the red card's own note: nothing was written on-chain, because proving *non*-membership is exactly what this design refuses to do.
 
@@ -79,8 +88,10 @@ Flash `docs/architecture.svg` with the out-of-scope band visible. Then the deplo
 - [ ] Green COMPLIANT card, close up
 - [ ] Explorer: attestation transaction
 - [ ] Explorer: **root-update transaction** (the important one)
+- [ ] Firmware root unchanged + component root changed, in the same shot
 - [ ] Baseline epoch flash + all cards dropping to amber
 - [ ] Green recovery on the unaffected device
 - [ ] **Red NON-COMPLIANT card** with its note (multiple takes)
 - [ ] Architecture diagram still
 - [ ] Contract address on screen
+- [ ] Device-bound proof label visible on a green card
