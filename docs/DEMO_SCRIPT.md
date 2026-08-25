@@ -67,7 +67,15 @@ Scroll the public state on screen: a device id, a status, an epoch, a Merkle roo
 
 > "A vulnerability lands in a component used by an unknown subset of firmware."
 
-Action: in the operator-only panel, click **Revoke component (CVE)** on *TLS Runtime 3.0*.
+Action: in the operator-only panel, click **Revoke + replay stale proof** on *TLS Runtime 3.0*.
+
+> **Use this button, not the plain "Revoke component (CVE)" one.** It does the revocation *and*
+> the consensus rejection in a single ~70-second action, which is why beats 2 and 3b run in one
+> pass. The plain revoke button is the simpler alternative, but demonstrating the replay
+> afterwards would need a full reset first — the component would already be gone, so no
+> pre-revocation proof could be built.
+
+While it runs (narrate over the wait):
 
 - The baseline epoch strip **flashes amber** and increments.
 - The **component root changes while the firmware root stays exactly the same**. Say this out loud; it is the flagship visual.
@@ -78,39 +86,48 @@ Say:
 
 > "The chain sees the policy root move, but the same opaque update could be an approval, revocation, or cover rotation. It does not learn which firmware contains the component; the proof circuit discovers the blast radius privately."
 
+Then the transaction log line lands — that is beat 3b below.
+
 ---
 
-## 2:00–2:35 — Beat 3: one recovers, one cannot
+## 2:00–2:20 — Beat 3: the chain itself refuses a stale proof
 
-Action: click **Attest now** on *Sensor gateway · 02* → back to **green**.
+Still the same click. Before revoking, it proved an attestation while the component was still
+approved; after revoking, it submitted that now-stale proof for real. The log line lands:
 
-Action: click **Attest now** on *Router · fleet-07* → it goes **red, NON-COMPLIANT**.
+> *Router · fleet-07: stale proof REJECTED by the Midnight ledger*
+
+and the device card turns red reading **"Rejected by consensus, not by this dashboard."**
+
+Say:
+
+> "That proof was generated *before* the revocation, and it is perfectly valid — it honestly
+> proves a path to the roots that existed a moment ago. We submitted it anyway. The Midnight
+> ledger re-checked those roots against the present and refused the transaction. That rejection
+> is not our server's opinion. It is consensus."
+
+This is the strongest evidence in the demo: the failure is produced by the chain, with no
+application logic involved.
+
+---
+
+## 2:20–2:40 — Beat 4: one recovers, one cannot
+
+Action: click **Attest now** on *Sensor gateway · 02* → back to **green, COMPLIANT** at the new epoch.
+
+Action: click **Attest now** on *Router · fleet-07* → it stays **red**, and the card's note now
+changes to the *local* failure: the proof could not even be built.
 
 Say the important sentence:
 
 > "The failed device's firmware leaf is still approved. The service is not consulting a CVE list: the local prover cannot obtain a path from one bound component to the current component root, so cryptography prevents it from constructing a valid proof."
 
-Point at the red card's own note: nothing was written on-chain, because proving *non*-membership is exactly what this design refuses to do.
+Two different red states, and the card says which is which: one where the chain refused a proof,
+one where no proof could exist. Neither is a backend deciding who passes.
 
 ---
 
-## Beat 3b (~15s) — the chain itself refuses a stale proof
-
-Use the **Revoke + replay stale proof** button on *TLS Runtime 3.0* instead of the plain revoke
-button. It proves an attestation while the component is still approved, revokes the component,
-then submits that now-stale proof for real.
-
-> "One more thing. This proof was generated *before* the revocation, and it is perfectly valid —
-> it honestly proves a path to the roots that existed a moment ago. We submit it anyway. The
-> Midnight ledger re-checks those roots against the present and refuses it. That rejection is
-> not our server's opinion. It is consensus."
-
-Show the rejection in the transaction log panel. This is the strongest evidence in the demo:
-the failure is produced by the chain, with no application logic involved.
-
----
-
-## 2:35–3:00 — The boundary, and close
+## 2:40–3:00 — The boundary, and close
 
 > "The hardware root of trust is the platform's job — measured boot and a TPM quote. Our contribution is the privacy-preserving transparency layer above it."
 
@@ -126,7 +143,9 @@ Flash `docs/architecture.svg` with the out-of-scope band visible. Then the deplo
 - [ ] Firmware root unchanged + component root changed, in the same shot
 - [ ] Baseline epoch flash + all cards dropping to amber
 - [ ] Green recovery on the unaffected device
-- [ ] **Red NON-COMPLIANT card** with its note (multiple takes)
+- [ ] **Log line: "stale proof REJECTED by the Midnight ledger"** (the strongest shot)
+- [ ] **Red card reading "Rejected by consensus, not by this dashboard"**
+- [ ] Red card again after a plain re-attest, now showing the *local* failure note
 - [ ] Architecture diagram still
 - [ ] Contract address on screen
 - [ ] Device-bound proof label visible on a green card
