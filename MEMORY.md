@@ -21,8 +21,8 @@ The complete lifecycle ran against the live Preview registry:
 
 ## Ready to film — the chain is in a clean demo state
 **Epoch 14, all components approved, both devices COMPLIANT.** The demo can be run from the top.
-A service was started on the final code (`logs/serve-final.log`); it needs one ~10-minute wallet
-sync before :8787 answers. To film:
+The operator service is **not** left running (it dies with the session, and every start costs one
+~10-minute wallet sync). Start it yourself and wait for `operator service on ...`. To film:
 ```
 docker start nightseal-proof-server      # from WINDOWS, not WSL
 npm run serve                            # wait for "operator service on ..."; open :8787
