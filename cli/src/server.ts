@@ -55,7 +55,14 @@ type Ctx = { providers: NightSealProviders; seed: string; contractAddress: strin
  * on-chain — proving non-membership is exactly what NightSeal refuses to do — so the
  * rejection is recorded here and the UI labels it as an attempt, not as chain data.
  */
-type Attempt = { ok: boolean; error?: string; at: string; epoch: string };
+type Attempt = {
+  ok: boolean;
+  error?: string;
+  at: string;
+  epoch: string;
+  /** True only when the transaction reached the chain and consensus refused it. */
+  viaLedger?: boolean;
+};
 const attempts = new Map<string, Attempt>();
 
 /** Chain writes are serialised — two transactions racing on one wallet will fail. */
@@ -193,6 +200,7 @@ const handle = async (
         error: verdict.accepted ? undefined : `rejected by the Midnight ledger: ${verdict.detail}`,
         at: new Date().toISOString(),
         epoch,
+        viaLedger: !verdict.accepted,
       });
       // A rejection is the expected, desirable outcome here, so it is reported as success
       // with an explicit message — "ok" alone would read as "the replay went through".

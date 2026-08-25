@@ -21,8 +21,7 @@ const BY_STATUS: Record<DeviceView['status'], Presentation> = {
 };
 
 /** A replayed proof is refused by consensus; an ordinary one cannot even be built. */
-const rejectedByLedger = (device: DeviceView): boolean =>
-  device.lastAttempt?.error?.includes('ledger') ?? false;
+const rejectedByLedger = (device: DeviceView): boolean => device.lastAttempt?.viaLedger === true;
 
 /**
  * A device whose most recent attempt against the *current* baseline was rejected is

@@ -4,7 +4,14 @@ export type DeviceStatus = 'COMPLIANT' | 'RE-ATTESTATION REQUIRED' | 'NEVER ATTE
  * Outcome of the last attestation attempt, reported by the operator service.
  * Not ledger state — a rejected proof writes nothing on-chain.
  */
-export type Attempt = { ok: boolean; error?: string; at: string; epoch: string };
+export type Attempt = {
+  ok: boolean;
+  error?: string;
+  at: string;
+  epoch: string;
+  /** True only when the transaction reached the chain and consensus refused it. */
+  viaLedger?: boolean;
+};
 
 export type DeviceView = {
   id: string;
