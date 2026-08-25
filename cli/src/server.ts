@@ -14,20 +14,24 @@ import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 import { EXPLORER, PREVIEW, explorerContract } from './config.ts';
 import { loadEnv, seedFor } from './env.ts';
-import { BUILDS, DEVICES, buildById, deviceById } from './fleet.ts';
+import { BUILDS, COMPONENTS, DEVICES, buildById, componentById, deviceById } from './fleet.ts';
 import { logger } from './logger.ts';
 import { buildProviders, type NightSealProviders } from './providers.ts';
 import {
   approveAllBuilds,
+  approveAllComponents,
   attestDevice,
   deployRegistry,
   findDeployment,
   readPublicState,
+  registerAllDevices,
   revokeBuild,
+  revokeComponent,
 } from './registry.ts';
 import { NightSealWallet } from './wallet.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
+const HOST = process.env.HOST ?? '127.0.0.1';
 const UI_DIR = new URL('../../ui/dist', import.meta.url).pathname;
 
 const MIME: Record<string, string> = {
@@ -105,7 +109,19 @@ const handle = async (
         explorer: explorerContract(ctx.contractAddress),
         explorerBase: EXPLORER,
         network: PREVIEW.networkId,
-        builds: BUILDS.map((b) => ({ id: b.id, version: b.version, index: b.index, note: b.note })),
+        builds: BUILDS.map((b) => ({
+          id: b.id,
+          version: b.version,
+          index: b.index,
+          note: b.note,
+          componentIds: b.componentIds,
+        })),
+        components: COMPONENTS.map((c) => ({
+          id: c.id,
+          label: c.label,
+          index: c.index,
+          note: c.note,
+        })),
         fleet: DEVICES.map((d) => ({ id: d.id, label: d.label, buildId: d.buildId })),
       },
     };
@@ -118,7 +134,7 @@ const handle = async (
     );
     try {
       const txHash = await serialise(() =>
-        attestDevice(ctx.providers, ctx.contractAddress, device),
+        attestDevice(ctx.providers, ctx.contractAddress, device, ctx.seed),
       );
       attempts.set(device.id, { ok: true, at: new Date().toISOString(), epoch });
       return { status: 200, body: { ok: true, txHash, explorer: `${EXPLORER}/tx/${txHash}` } };
@@ -137,10 +153,22 @@ const handle = async (
     return { status: 200, body: { ok: true, txHash, explorer: `${EXPLORER}/tx/${txHash}` } };
   }
 
-  if (method === 'POST' && path === '/api/approve') {
-    const txHashes = await serialise(() =>
-      approveAllBuilds(ctx.providers, ctx.contractAddress, ctx.seed),
+  if (method === 'POST' && path.startsWith('/api/revoke-component/')) {
+    const component = componentById(
+      decodeURIComponent(path.slice('/api/revoke-component/'.length)),
     );
+    const txHash = await serialise(() =>
+      revokeComponent(ctx.providers, ctx.contractAddress, ctx.seed, component),
+    );
+    return { status: 200, body: { ok: true, txHash, explorer: `${EXPLORER}/tx/${txHash}` } };
+  }
+
+  if (method === 'POST' && path === '/api/approve') {
+    const txHashes = await serialise(async () => [
+      ...(await registerAllDevices(ctx.providers, ctx.contractAddress, ctx.seed)),
+      ...(await approveAllComponents(ctx.providers, ctx.contractAddress, ctx.seed)),
+      ...(await approveAllBuilds(ctx.providers, ctx.contractAddress, ctx.seed)),
+    ]);
     return { status: 200, body: { ok: true, txHashes } };
   }
 
@@ -194,6 +222,8 @@ const main = async (): Promise<void> => {
   if (!deployment) {
     const deployed = await deployRegistry(providers, seed);
     const contractAddress = deployed.deployTxData.public.contractAddress;
+    await registerAllDevices(providers, contractAddress, seed);
+    await approveAllComponents(providers, contractAddress, seed);
     await approveAllBuilds(providers, contractAddress, seed);
     deployment = { contractAddress, network: 'preview', deployedAt: new Date().toISOString() };
   } else {
@@ -218,8 +248,8 @@ const main = async (): Promise<void> => {
         json(res, 200, { ok: false, error: message });
       },
     );
-  }).listen(PORT, () => {
-    logger.info(`NightSeal operator service on http://localhost:${PORT}`);
+  }).listen(PORT, HOST, () => {
+    logger.info(`NightSeal operator service on http://${HOST}:${PORT}`);
     logger.info(`Registry ${contractAddress}`);
   });
 

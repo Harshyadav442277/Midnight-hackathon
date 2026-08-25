@@ -8,7 +8,8 @@
  * Privileged actions are deliberately absent; they need the operator key and run on
  * the operator's own machine. This file imports no workspace TypeScript so it bundles
  * cleanly as a serverless function: the ledger decoder is the committed compiler
- * output, and fleet metadata is the shared JSON manifest.
+ * output. The shared fixture manifest is used only for public device labels; firmware
+ * versions and device-to-build/component relationships are not returned.
  */
 
 import { createHash } from 'node:crypto';
@@ -27,7 +28,6 @@ const EXPLORER = 'https://preview.midnightexplorer.com';
 const CONTRACT_ADDRESS = process.env.NIGHTSEAL_CONTRACT_ADDRESS ?? '';
 
 type Manifest = {
-  builds: { id: string; version: string; index: number; note: string }[];
   devices: { id: string; label: string; buildId: string }[];
 };
 
@@ -70,6 +70,7 @@ export default async function handler(_req: unknown, res: any): Promise<void> {
         explorerBase: EXPLORER,
         baselineEpoch,
         approvedRoot: state.approvedSet.root().field,
+        componentRoot: state.componentSet.root().field,
         devices: manifest.devices.map((device) => {
           const key = deviceKey(device.id);
           const attested = state.deviceStatus.member(key) ? state.deviceStatus.lookup(key) : 0;
@@ -80,10 +81,20 @@ export default async function handler(_req: unknown, res: any): Promise<void> {
               : epoch === baselineEpoch
                 ? 'COMPLIANT'
                 : 'RE-ATTESTATION REQUIRED';
-          return { id: device.id, label: device.label, status, epoch, lastAttempt: null };
+          return {
+            id: device.id,
+            label: device.label,
+            status,
+            epoch,
+            identityRegistered: state.registeredDeviceKey.member(key),
+            lastAttempt: null,
+          };
         }),
-        builds: manifest.builds,
-        fleet: manifest.devices,
+        // The operator-only UI receives these from its local service. The public
+        // auditor must not expose version or private composition metadata.
+        builds: [],
+        components: [],
+        fleet: [],
       }),
     );
   } catch (err) {
