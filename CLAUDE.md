@@ -13,14 +13,22 @@
 - [PRD.md](PRD.md) — frozen MVP scope.
 - [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) — the build aims at making this demoable.
 
-## Commands
-(fill in as toolchain lands — keep these exact and current)
-- Compile contract: `npm run compact` (in `contract/`)
-- Typecheck: `npm run typecheck`
-- Test: `npm run test`
-- Deploy: `npm run deploy` (in `cli/` or `contract/`)
-- Proof server: `docker run -p 6300:6300 midnightnetwork/proof-server -- 'midnight-proof-server --network <net>'` (verify tag/net)
-- App dev: `npm run dev` (in `ui/`)
+## Commands (verified working — run from the repo root in WSL)
+The working tree is **`/root/nightseal` inside WSL Ubuntu** (`\\wsl.localhost\Ubuntu\root\nightseal` from Windows).
+The Compact compiler has no Windows build, so everything below runs in WSL.
+
+- Compile contract: `npm run compact` — fast iteration: `npm run compact:fast --workspace contract` (`--skip-zk`, ~0.3s)
+- Typecheck everything: `npm run typecheck`
+- Test: `npm test` (9 lifecycle tests)
+- Build all: `npm run build`
+- Proof server: `docker run -d --name nightseal-proof-server -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v`
+  (health check is `GET /`, not `/health`)
+- CLI: `npm run cli -- <address|balance|dust|deploy|approve|revoke <build>|attest <device>|status>`
+- Operator service + dashboard: `npm run serve` → http://localhost:8787
+- UI dev server: `npm run dev --workspace ui`
+
+**Long-running processes must be held open by a background task** — a `nohup`'d process dies when the
+`wsl.exe` invocation exits.
 
 ## Conventions
 - TypeScript strict everywhere. Boring, explicit code. Files under ~300 lines.
@@ -31,5 +39,6 @@
 1. Session start: read MEMORY.md → ARCHITECTURE.md → top unchecked TASKS.md item.
 2. After every change: compile → typecheck → test; fix before reporting done.
 3. Session end: update MEMORY.md, GAPS.md, TASKS.md; commit.
-4. **BLOCKER before Devpost submission: user must explicitly confirm student eligibility (event is students-only). Never submit without it.**
-5. Verify Midnight facts against live docs (https://docs.midnight.network/), not memory.
+4. ~~Student eligibility~~ — **confirmed by the user 2026-08-25.**
+5. Verify Midnight facts against live docs (https://docs.midnight.network/), not memory — see [docs/TOOLCHAIN_FACTS.md](docs/TOOLCHAIN_FACTS.md).
+6. Never commit `.env`, and never put the wallet seed anywhere but `.env`. Anything deployed publicly (e.g. Vercel) gets **read-only** access — the operator seed stays local.
