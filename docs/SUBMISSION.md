@@ -108,10 +108,10 @@ infrastructure.
 
 - Source: https://github.com/Harshyadav442277/Midnight-hackathon
 - Live auditor dashboard (read-only): https://nightseal.vercel.app
-- Preview contract: https://preview.midnightexplorer.com/contract/160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e
-- Component-revocation (root-update) transaction: https://preview.midnightexplorer.com/tx/98d6a6ab5836e5212d663368cb571e99838fd139fbe65ae09915b9e64c0c1507
-- Attestation transaction: https://preview.midnightexplorer.com/tx/73dea0b0f198c8033eb7e90f796b871819574bc2adc4a36869b264dcf95ab0e7
-- Post-revocation recovery of the unaffected device: https://preview.midnightexplorer.com/tx/040fd591c82b0a0029893c4cd55650d85a20e2a451850a29b07340466560353d
+- Preview contract: https://preview.midnightexplorer.com/contracts/160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e
+- Component-revocation (root-update) transaction: https://preview.midnightexplorer.com/transactions/98d6a6ab5836e5212d663368cb571e99838fd139fbe65ae09915b9e64c0c1507
+- Attestation transaction: https://preview.midnightexplorer.com/transactions/73dea0b0f198c8033eb7e90f796b871819574bc2adc4a36869b264dcf95ab0e7
+- Post-revocation recovery of the unaffected device: https://preview.midnightexplorer.com/transactions/040fd591c82b0a0029893c4cd55650d85a20e2a451850a29b07340466560353d
 - Full lifecycle evidence: [docs/EVIDENCE.md](EVIDENCE.md)
 - Demo video: `[PENDING RECORDING]`
 

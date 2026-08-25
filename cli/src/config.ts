@@ -22,8 +22,9 @@ export const PREVIEW: EnvironmentConfiguration = {
 
 export const EXPLORER = 'https://preview.midnightexplorer.com';
 
-export const explorerTx = (txHash: string): string => `${EXPLORER}/tx/${txHash}`;
-export const explorerContract = (address: string): string => `${EXPLORER}/contract/${address}`;
+// Paths are plural — the singular forms 404.
+export const explorerTx = (txHash: string): string => `${EXPLORER}/transactions/${txHash}`;
+export const explorerContract = (address: string): string => `${EXPLORER}/contracts/${address}`;
 
 /** Where the compiled circuit assets live, for the ZK config provider. */
 export const ZK_CONFIG_PATH = new URL('../../contract/src/managed/nightseal', import.meta.url)

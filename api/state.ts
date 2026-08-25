@@ -66,7 +66,7 @@ export default async function handler(_req: unknown, res: any): Promise<void> {
         readOnly: true,
         network: NETWORK,
         contractAddress: CONTRACT_ADDRESS,
-        explorer: `${EXPLORER}/contract/${CONTRACT_ADDRESS}`,
+        explorer: `${EXPLORER}/contracts/${CONTRACT_ADDRESS}`,
         explorerBase: EXPLORER,
         baselineEpoch,
         approvedRoot: state.approvedSet.root().field,
