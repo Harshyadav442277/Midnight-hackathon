@@ -10,7 +10,7 @@
 |---|---|
 | **A. Silent revocation** | ✅ **Implemented** — `updateFirmwareLeaf` / `updateComponentLeaf` with `randomBytes(32)` tombstones are live in the contract, CLI, and tests. |
 | **§1 honesty findings + §4 checklist 1–5** | ✅ Done — README attack map, capacity note, softened overclaim, decision-6 wording, unlinkability paragraph all landed; decision 7 fixed this session. |
-| **B. Consensus-level rejection evidence** | ✅ **Implemented** — `replay` CLI verb, `/api/replay/:device/:component` route, and a dashboard control. Capture happens at `balanceTx` (proven but *unbalanced*), because a balanced held transaction reserves the wallet's DUST and starves the revocation that must follow — that was a real failure on first run. |
+| **B. Consensus-level rejection evidence** | ✅ **Implemented and verified twice on Preview** — `replay` CLI verb, `/api/replay/:device/:component` route, and a dashboard control. The node refuses the stale transaction (`1010: Invalid Transaction: Custom error: 104`). Capture happens at `balanceTx` (proven but *unbalanced*), because a balanced held transaction reserves the wallet's DUST and starves the revocation that must follow — that was a real failure on first run. |
 | **C. Split-authority cascade** | ⬇️ Demoted to **post-hackathon**: it reopens the contract while the deploy gate is the whole ballgame, and A already banks the silent-revocation story. Narrate it as the production profile instead. |
 | **D. Vendor-blind approvals / E. Break-glass reveal** | Optional quick wins, only with clear margin after the video exists. |
 | **§4 items 6–8** | Item 8 (record the failed attempt in EVIDENCE.md) folds into the deploy runbook; items 6–7 optional. |
