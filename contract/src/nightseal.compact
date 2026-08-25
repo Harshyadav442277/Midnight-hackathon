@@ -1,9 +1,9 @@
 // NightSeal — privacy-preserving firmware attestation registry.
 //
 // A device proves in zero knowledge that its firmware measurement is part of the
-// registry operator's current approved baseline, without revealing the measurement.
-// The public ledger carries only: opaque commitments, a compliance status per device,
-// and the baseline epoch each device last attested against.
+// registry operator's current approved baseline, without revealing the measurement or
+// the component manifest bound into it. The same proof authenticates the registered
+// device and checks every hidden component against a separately revocable allowlist.
 
 pragma language_version 0.23;
 
@@ -18,6 +18,10 @@ export enum Status {
 // themselves: Merkle leaves are public ledger state.
 export ledger approvedSet: MerkleTree<10, Bytes<32>>;
 
+// A second current-only capability set. Firmware commitments bind a hidden three-slot
+// component manifest; every component must remain in this tree for attestation to pass.
+export ledger componentSet: MerkleTree<10, Bytes<32>>;
+
 // Bumped on every baseline change (approval or revocation). A device is only current
 // if it attested against the present epoch.
 export ledger baselineEpoch: Counter;
@@ -25,6 +29,10 @@ export ledger baselineEpoch: Counter;
 // Public compliance state, keyed by device id.
 export ledger deviceStatus: Map<Bytes<32>, Status>;
 export ledger deviceEpoch: Map<Bytes<32>, Uint<64>>;
+
+// Device id -> commitment to a device-held secret. The attestation proves knowledge
+// of that secret, so one device cannot write compliance for another device's id.
+export ledger registeredDeviceKey: Map<Bytes<32>, Bytes<32>>;
 
 // The registry operator, fixed at deployment.
 export ledger operatorPk: Bytes<32>;
@@ -39,9 +47,15 @@ witness localSecretKey(): Bytes<32>;
 witness firmwareMeasurement(): Bytes<32>;
 witness firmwareRandomness(): Bytes<32>;
 
+// The fixed-width private component manifest. Three slots keep the hackathon circuit
+// static; the firmware commitment binds this exact list so components cannot be swapped.
+witness componentMeasurements(): Vector<3, Bytes<32>>;
+witness componentRandomness(): Vector<3, Bytes<32>>;
+
 // The Merkle path to this device's commitment, resolved from public ledger state
 // by the TypeScript witness (findPathForLeaf is not callable inside a circuit).
 witness firmwarePath(commitment: Bytes<32>): MerkleTreePath<10, Bytes<32>>;
+witness componentPath(commitment: Bytes<32>): MerkleTreePath<10, Bytes<32>>;
 
 // --- helpers --------------------------------------------------------------
 
@@ -49,10 +63,40 @@ export circuit operatorIdentity(sk: Bytes<32>): Bytes<32> {
   return persistentHash<Vector<2, Bytes<32>>>([pad(32, "nightseal:operator:"), sk]);
 }
 
-// Domain-separated commitment to a firmware measurement.
-export circuit firmwareCommitment(measurement: Bytes<32>, randomness: Bytes<32>): Bytes<32> {
+export circuit deviceIdentity(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "nightseal:device:"), sk]);
+}
+
+export circuit componentCommitment(
+  measurement: Bytes<32>,
+  randomness: Bytes<32>
+): Bytes<32> {
   return persistentCommit<Vector<2, Bytes<32>>>(
-    [pad(32, "nightseal:firmware:"), measurement],
+    [pad(32, "nightseal:component:"), measurement],
+    randomness
+  );
+}
+
+// This digest is private. It binds an exact component composition into the approved
+// firmware capability without exposing the component commitments or their ordering.
+export circuit componentManifest(components: Vector<3, Bytes<32>>): Bytes<32> {
+  return persistentHash<Vector<4, Bytes<32>>>([
+    pad(32, "nightseal:manifest:"),
+    components[0],
+    components[1],
+    components[2]
+  ]);
+}
+
+// Domain-separated commitment to both the firmware measurement and its private
+// component-manifest digest.
+export circuit firmwareCommitment(
+  measurement: Bytes<32>,
+  manifest: Bytes<32>,
+  randomness: Bytes<32>
+): Bytes<32> {
+  return persistentCommit<Vector<3, Bytes<32>>>(
+    [pad(32, "nightseal:firmware:"), measurement, manifest],
     randomness
   );
 }
@@ -64,19 +108,26 @@ constructor() {
 
 // --- operator circuits ----------------------------------------------------
 
-// Add an approved firmware build to the baseline, as an opaque commitment.
-export circuit approveFirmware(commitment: Bytes<32>, index: Uint<64>): [] {
+// Bind a public device id to proof-of-knowledge of a private device secret.
+export circuit registerDevice(deviceId: Bytes<32>, identity: Bytes<32>): [] {
   assert(operatorPk == operatorIdentity(localSecretKey()), "not the registry operator");
-  approvedSet.insertIndex(disclose(commitment), disclose(index));
+  registeredDeviceKey.insert(disclose(deviceId), disclose(identity));
+}
+
+// Approval, revocation, and cover rotation deliberately share one public operation.
+// A real approval writes a capability commitment; revocation writes an opaque random
+// tombstone for which nobody knows a valid opening. Observers see only a leaf update.
+export circuit updateFirmwareLeaf(value: Bytes<32>, index: Uint<64>): [] {
+  assert(operatorPk == operatorIdentity(localSecretKey()), "not the registry operator");
+  approvedSet.insertIndex(disclose(value), disclose(index));
   baselineEpoch.increment(1);
 }
 
-// Revoke a firmware build — the CVE moment. insertIndexDefault overwrites the leaf
-// with the default value, which is how the standard library emulates removal. The
-// root changes, so every proof built against the old baseline stops verifying.
-export circuit revokeFirmware(index: Uint<64>): [] {
+// The component tree uses the same operation-hiding update shape. The chain cannot
+// distinguish a component approval from a tombstone revocation or cover rotation.
+export circuit updateComponentLeaf(value: Bytes<32>, index: Uint<64>): [] {
   assert(operatorPk == operatorIdentity(localSecretKey()), "not the registry operator");
-  approvedSet.insertIndexDefault(disclose(index));
+  componentSet.insertIndex(disclose(value), disclose(index));
   baselineEpoch.increment(1);
 }
 
@@ -88,12 +139,41 @@ export circuit revokeFirmware(index: Uint<64>): [] {
 // That is deliberate: HistoricMerkleTree would accept any past root and a revoked
 // device could keep attesting forever.
 export circuit attest(deviceId: Bytes<32>): [] {
-  const commitment = firmwareCommitment(firmwareMeasurement(), firmwareRandomness());
+  assert(registeredDeviceKey.member(disclose(deviceId)), "device is not registered");
+  assert(
+    registeredDeviceKey.lookup(disclose(deviceId)) == deviceIdentity(localSecretKey()),
+    "attestation secret does not match the registered device"
+  );
+
+  const measurements = componentMeasurements();
+  const randomness = componentRandomness();
+  const c0 = componentCommitment(measurements[0], randomness[0]);
+  const c1 = componentCommitment(measurements[1], randomness[1]);
+  const c2 = componentCommitment(measurements[2], randomness[2]);
+  const manifest = componentManifest([c0, c1, c2]);
+  const commitment = firmwareCommitment(
+    firmwareMeasurement(),
+    manifest,
+    firmwareRandomness()
+  );
   const path = firmwarePath(commitment);
 
   assert(
     approvedSet.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))),
     "firmware is not in the current approved baseline"
+  );
+
+  assert(
+    componentSet.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(componentPath(c0)))),
+    "firmware contains a component outside the current approved baseline"
+  );
+  assert(
+    componentSet.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(componentPath(c1)))),
+    "firmware contains a component outside the current approved baseline"
+  );
+  assert(
+    componentSet.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(componentPath(c2)))),
+    "firmware contains a component outside the current approved baseline"
   );
 
   deviceStatus.insert(disclose(deviceId), Status.COMPLIANT);
