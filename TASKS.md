@@ -11,28 +11,34 @@
 - [x] Test wallet created (headless, seed in .env)
 - [~] tDUST from faucet — **CAPTCHA-gated, needs the user**; then `npm start -- dust`
 - [ ] Contract deployed to Preview; explorer entry screenshot saved to docs/
-- [ ] Update CLAUDE.md "Commands" with real, verified commands
+- [x] Update CLAUDE.md "Commands" with real, verified commands
 
 ## Phase 1 — the real contract (budget ~8–10h)
-- [ ] NightSeal Compact contract: approved-set MerkleTree + attest circuit + updateRoot + deviceStatus map
-- [ ] Compiles clean; TS types generated
-- [ ] Contract tests (simulator): attest passes for member; non-member fails; root update; re-attest fails; replay rejected
-- [ ] Deploy to Preview/PreProd; run full lifecycle on-chain; save tx hashes (attest / root-update / failed re-attest) to docs/EVIDENCE.md
+- [x] NightSeal Compact contract: two current-only capability trees + device-bound attest + status map
+- [x] Flagship: private three-component manifests with cascading component revocation
+- [x] Secondary: registered device-secret proof-of-possession blocks cross-device authorization
+- [x] Stretch: operation-hiding leaf updates (approval / tombstone revocation / cover rotation share one circuit shape)
+- [x] Full Compact compile clean; TS types and proving assets generated
+- [x] Contract tests (11): lifecycle, impersonation, component substitution, two-root replay, rogue operator, secrecy serialization
+- [ ] Deploy to Preview/PreProd; run full lifecycle on-chain; save successful tx hashes and the failed-proof error to docs/EVIDENCE.md
 - [ ] Record raw footage of lifecycle (screen capture) — incremental demo material
 
 ## Phase 2 — the app (budget ~8–10h)
-- [ ] Scaffold web app (two screens max: auditor dashboard + attest panel)
-- [ ] Wire Midnight.js providers + proof server + wallet
-- [ ] Auditor dashboard: device list, big PASS/FAIL, green→red flip with motion+timestamp (ALL polish hours here)
-- [ ] Attest panel: pick device → prove → submit
-- [ ] Operator action: publish new root (button or CLI — whichever is cheaper)
+- [x] Scaffold web app (auditor dashboard + inline attest/operator controls)
+- [x] Wire Midnight.js providers + proof server + headless wallet/operator service
+- [x] Auditor dashboard: two roots, device binding, green/amber/red compliance states
+- [x] Attest controls: device-bound firmware + component proof
+- [x] Operator action: private dependency panel + cascading component revocation
+- [x] Production build and in-app browser flow verified; Vite 7/8 dev mismatch fixed
 - [ ] Record raw footage of the flip
 
 ## Phase 3 — video + README (budget ~6–8h; record incrementally throughout)
-- [ ] README per BUILD_BRIEF §7 (address+explorer link at top, tables, diagram, Beyond-the-tutorials, ≤5-command setup, assumptions)
-- [ ] Architecture diagram (root-of-trust boundary labeled)
+- [x] README pitch, privacy table, mechanism, Beyond-the-tutorials, setup, limitations
+- [x] Architecture diagram (root-of-trust boundary + two cryptographic gates)
+- [x] Innovation ranking and selection audit
+- [x] Paste-ready Devpost submission copy and deployment/evidence runbook
 - [ ] ~3-min video per docs/DEMO_SCRIPT.md
-- [ ] **USER CONFIRMS STUDENT ELIGIBILITY** (hard blocker for submission)
+- [x] **USER CONFIRMS STUDENT ELIGIBILITY** — confirmed by user 2026-08-25
 - [ ] Devpost submission (form + video link + public repo) — well before Aug 27 07:00 IST
 
 ## Contingency triggers
