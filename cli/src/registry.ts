@@ -17,6 +17,7 @@ import {
 } from '@nightseal/contract';
 
 import { PRIVATE_STATE_ID, explorerContract } from './config.ts';
+import { explain } from './errors.ts';
 import {
   BUILDS,
   COMPONENTS,
@@ -317,7 +318,7 @@ export const submitHeldAttestation = async (
     const txHash = await providers.midnightProvider.submitTx(finalized);
     return { accepted: true, detail: txHash };
   } catch (err) {
-    return { accepted: false, detail: err instanceof Error ? err.message : String(err) };
+    return { accepted: false, detail: explain(err) };
   }
 };
 

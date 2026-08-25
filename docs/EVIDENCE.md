@@ -37,15 +37,40 @@ rotation: every one is `update*Leaf(value, index)` carrying an opaque 32-byte va
 
 ## Live lifecycle
 
-| Beat | Expected cryptographic state | Transaction / evidence |
+Executed end to end against the live Preview registry on 2026-08-25 (11:32–11:47 UTC).
+
+| Beat | Cryptographic state | Transaction / evidence |
 |---|---|---|
-| Deploy + bootstrap | registered device commitments; firmware and component roots populated | ✅ above — 9 transactions, epoch 7 |
-| PASS (clean device) | registered identity + firmware + three components prove current | ✅ `73dea0b0f198c8033eb7e90f796b871819574bc2adc4a36869b264dcf95ab0e7` |
+| Deploy + bootstrap | registered device commitments; both capability roots populated | ✅ 9 transactions above, epoch 7 |
+| PASS (clean device) | registered identity + firmware + three components all prove current | ✅ `73dea0b0f198c8033eb7e90f796b871819574bc2adc4a36869b264dcf95ab0e7` |
 | PASS (device that secretly depends on TLS 3.0) | same three gates; nothing on-chain distinguishes it from the clean device | ✅ `c591dc427fe530c56661f0db56281a072134d01385e85c935c5c64d7fca43a99` |
-| Opaque component update | component root and epoch move; firmware root stays unchanged | pending |
-| Clean recovery | unaffected device re-attests at new epoch | pending |
-| Selective FAIL | affected device cannot resolve a current component path; no tx is submitted | pending error capture |
-| **Consensus FAIL (replay)** | a proof valid against the pre-revocation roots is submitted after the roots move; the **ledger** rejects it at apply time | pending |
+| Opaque component update (the CVE) | component root and epoch move; **firmware root byte-identical** | ✅ `98d6a6ab5836e5212d663368cb571e99838fd139fbe65ae09915b9e64c0c1507` |
+| **Consensus FAIL (replay)** | a proof valid against the pre-revocation roots, submitted after the roots moved, is **refused by the ledger** | ✅ rejected — node returned `1010: Invalid Transaction: Custom error: 104`; no transaction was recorded |
+| Clean recovery | unaffected device re-attests against the new roots | ✅ `040fd591c82b0a0029893c4cd55650d85a20e2a451850a29b07340466560353d` |
+| Selective FAIL | affected device cannot resolve a current component path, so no transaction can even be built | ✅ `ContractRuntimeError: Error executing circuit 'attest'` — nothing submitted |
+
+### The invariant that carries the product
+
+|  | Before the component revocation | After |
+|---|---|---|
+| Baseline epoch | 7 | **8** |
+| Firmware capability root | `1745636128736094226352452322422029702955587615436897047336384466937955749568` | **identical — unchanged** |
+| Component capability root | `39672010876196885146161952834607207542719471899791519010124305427177892939627` | **`26211678861062063100674004650701188971973021925824327902212782252686379995044`** |
+| Router · fleet-07 (secretly depends on TLS 3.0) | COMPLIANT @ 7 | **stuck at epoch 7 — cannot prove** |
+| Sensor gateway · 02 (clean) | COMPLIANT @ 7 | **COMPLIANT @ 8 — recovered** |
+
+One component capability was replaced with an opaque tombstone. No firmware leaf was touched,
+and the chain never learned which firmware contained that component — yet exactly the dependent
+device lost the ability to prove compliance, and the clean one did not.
+
+### Two distinct failure modes, deliberately
+
+- **Selective FAIL** happens *before* a transaction exists: the prover cannot find a current
+  Merkle path, so nothing is submitted. This is the honest everyday case, and the dashboard
+  labels it as a local proof-construction failure.
+- **Consensus FAIL (replay)** happens *on-chain*: a proof built moments earlier is submitted
+  after the roots move, and the node rejects the transaction outright. This is the strongest
+  evidence in the project — revocation enforced by consensus, not by application logic.
 
 ## Verified local evidence
 

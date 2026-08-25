@@ -6,6 +6,7 @@ import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 import { PREVIEW, explorerContract } from './config.ts';
 import { loadEnv, seedFor } from './env.ts';
+import { explain } from './errors.ts';
 import { BUILDS, COMPONENTS, DEVICES, buildById, componentById, deviceById } from './fleet.ts';
 import { logger } from './logger.ts';
 import { buildProviders } from './providers.ts';
@@ -217,7 +218,7 @@ const main = async (): Promise<void> => {
 main().then(
   () => process.exit(0),
   (err) => {
-    logger.error(err instanceof Error ? err.message : String(err));
+    logger.error(explain(err));
     if (process.env.LOG_LEVEL === 'debug') console.error(err);
     process.exit(1);
   },

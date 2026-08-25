@@ -14,6 +14,7 @@ import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 import { EXPLORER, PREVIEW, explorerContract, explorerTx } from './config.ts';
 import { loadEnv, seedFor } from './env.ts';
+import { explain } from './errors.ts';
 import { BUILDS, COMPONENTS, DEVICES, buildById, componentById, deviceById } from './fleet.ts';
 import { logger } from './logger.ts';
 import { buildProviders, type NightSealProviders } from './providers.ts';
@@ -141,7 +142,7 @@ const handle = async (
       attempts.set(device.id, { ok: true, at: new Date().toISOString(), epoch });
       return { status: 200, body: { ok: true, txHash, explorer: explorerTx(txHash) } };
     } catch (err) {
-      const error = err instanceof Error ? err.message : String(err);
+      const error = explain(err);
       attempts.set(device.id, { ok: false, error, at: new Date().toISOString(), epoch });
       return { status: 200, body: { ok: false, error } };
     }
@@ -285,7 +286,7 @@ const main = async (): Promise<void> => {
     handle(ctx, req.method ?? 'GET', path).then(
       ({ status, body }) => json(res, status, body),
       (err: unknown) => {
-        const message = err instanceof Error ? err.message : String(err);
+        const message = explain(err);
         logger.error({ path, message }, 'request failed');
         // A failed attestation is a real product outcome, not a server bug.
         json(res, 200, { ok: false, error: message });

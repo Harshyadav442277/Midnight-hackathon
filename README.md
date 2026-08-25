@@ -38,6 +38,7 @@ The point is the middle row. A regulator can demand proof of firmware provenance
 1. **Pass.** A registered device attests through three simultaneous proof gates: device-secret ownership, current firmware membership, and current membership of all three privately bound components. The dashboard turns green; the explorer reveals none of those secrets.
 2. **Revoke.** A CVE drops in one component. The operator removes that opaque component capability. The **component root moves while the firmware root stays unchanged**, and the policy epoch increments.
 3. **Fail.** Both devices re-attest. The unaffected device goes green again. The secretly dependent device **cannot produce a valid proof at all**—its firmware leaf still exists, but one component path no longer does. It goes red; the chain sees the policy epoch move, but not which component, firmware, or dependency caused it.
+4. **Rejected by consensus.** A proof built *before* the revocation—honest, valid, fully verifying—is submitted afterwards anyway. The ledger re-checks the roots recorded in its transcript against present state and **refuses the transaction itself**. The failure is a chain verdict, not an application decision.
 
 The difference between beats 2 and 3 is produced by cryptography, not by application logic.
 
@@ -132,6 +133,7 @@ Two devices on the same firmware cannot be clustered by an on-chain firmware val
 | `npm run cli -- attest <device>` | a device proves its firmware is in the baseline |
 | `npm run cli -- revoke-component <component>` | revoke one hidden component and cascade failure into dependent firmware — the flagship CVE moment |
 | `npm run cli -- revoke <build>` | directly revoke a firmware build — preserves the original flow |
+| `npm run cli -- replay <device> <component>` | prove an attestation, revoke the component, then submit the stale proof — the ledger rejects it |
 | `npm run cli -- status` | print the public compliance state an auditor sees |
 
 ---
