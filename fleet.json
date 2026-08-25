@@ -1,19 +1,51 @@
 {
-  "_comment": "Public demo metadata, shared by the CLI and the public auditor endpoint. Secrets (firmware measurements and blinding factors) are never stored here — they are derived from these ids in cli/src/fleet.ts.",
+  "_comment": "Reproducible demo fixtures. Measurements, device secrets, and commitment openings are derived locally in cli/src/fleet.ts; the public auditor endpoint exposes only device labels and public ledger results.",
+  "components": [
+    {
+      "id": "secure-boot-6",
+      "label": "Secure Boot Core 6",
+      "measurementLabel": "secure-boot-core-6",
+      "index": 0,
+      "note": "Shared measured-boot component."
+    },
+    {
+      "id": "linux-lts-6.12",
+      "label": "Linux LTS 6.12",
+      "measurementLabel": "linux-lts-6.12",
+      "index": 1,
+      "note": "Shared hardened kernel component."
+    },
+    {
+      "id": "tls-3.4-hardened",
+      "label": "TLS Runtime 3.4",
+      "measurementLabel": "tls-runtime-3.4-hardened",
+      "index": 2,
+      "note": "Current hardened transport component."
+    },
+    {
+      "id": "tls-3.0-cve",
+      "label": "TLS Runtime 3.0",
+      "measurementLabel": "tls-runtime-3.0-cve-2026-11xx",
+      "index": 3,
+      "note": "The hidden component a CVE revokes during the demo."
+    }
+  ],
   "builds": [
     {
       "id": "rtr-2.4.1",
       "version": "router-fw 2.4.1",
       "measurementLabel": "router-fw-2.4.1",
       "index": 0,
-      "note": "Current hardened build."
+      "note": "Current hardened build.",
+      "componentIds": ["secure-boot-6", "linux-lts-6.12", "tls-3.4-hardened"]
     },
     {
       "id": "rtr-2.3.9",
       "version": "router-fw 2.3.9",
       "measurementLabel": "router-fw-2.3.9",
       "index": 1,
-      "note": "The build a CVE lands on during the demo."
+      "note": "Privately depends on the component revoked during the demo.",
+      "componentIds": ["secure-boot-6", "linux-lts-6.12", "tls-3.0-cve"]
     }
   ],
   "devices": [
