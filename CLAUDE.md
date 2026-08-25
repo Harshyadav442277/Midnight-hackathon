@@ -13,16 +13,23 @@
 - [PRD.md](PRD.md) — frozen MVP scope.
 - [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) — the build aims at making this demoable.
 
-## Commands (verified working — run from the repo root in WSL)
-The working tree is **`/root/nightseal` inside WSL Ubuntu** (`\\wsl.localhost\Ubuntu\root\nightseal` from Windows).
-The Compact compiler has no Windows build, so everything below runs in WSL.
+## Where things run (verified 2026-08-25 evening)
+- **GitHub `main` is the canonical history.** Edit and commit on the **Windows checkout** (this folder);
+  **WSL Ubuntu `/root/nightseal` mirrors `origin/main`** and runs every build/test — the Compact
+  compiler has no Windows build. Sync via git (push from Windows → `git reset --hard origin/main` in WSL),
+  never by copying files.
+- Invoke WSL from Windows as `wsl.exe -d Ubuntu bash -lc '<command>'` — the direct-command form
+  (`wsl.exe -d Ubuntu <command>`) can fail silently and return empty output.
+- **Docker runs on the Windows engine only** (`docker` is unavailable inside WSL — Desktop's WSL
+  integration is off). Mirrored networking makes `localhost:6300` reachable from both sides.
 
+## Commands (run in WSL from `/root/nightseal`, unless marked Windows)
 - Compile contract: `npm run compact` — fast iteration: `npm run compact:fast --workspace contract` (`--skip-zk`, ~0.3s)
+  Full compile regenerates `contract/src/managed/nightseal/keys/` (~27 MB, gitignored) — required before deploy/attest.
 - Typecheck everything: `npm run typecheck`
 - Test: `npm test` (11 lifecycle/adversarial tests)
 - Build all: `npm run build`
-- Proof server: `docker run -d --name nightseal-proof-server -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v`
-  (health check is `GET /`, not `/health`)
+- Proof server (**Windows**): `docker start nightseal-proof-server` — container exists; health check is `GET /` on :6300, not `/health`
 - CLI: `npm run cli -- <address|balance|dust|deploy|approve|revoke-component <component>|revoke <build>|attest <device>|status>`
 - Operator service + dashboard: `npm run serve` → http://localhost:8787
 - UI dev server: `npm run dev --workspace ui`

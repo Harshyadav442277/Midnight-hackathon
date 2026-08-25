@@ -5,11 +5,12 @@
 | | |
 |---|---|
 | Network | Midnight Preview |
-| Wallet sync | complete; balance rechecked 2026-08-25 15:05 IST |
-| Wallet balance | `NIGHT: 0`, `DUST: 0` |
 | Funding address | `mn_addr_preview14066huxp7t3rjx85pkptfgcntcny8ul0tjx8q0dl4d838gnwu2psw8jw44` |
-| Faucet | https://midnight-tmnight-preview.nethermind.dev/ |
-| Contract | pending faucet funding |
+| Faucet transaction | `00388f16d712bd60fa0984f95afd76a803f938d59c61000a66194591fa52dbfc35` (confirmed 2026-08-25 ~15:30 IST) |
+| Wallet balance | `NIGHT: 5000000000` (5,000 tNIGHT base units), `DUST: 0` at funding time |
+| DUST registration | submitted 2026-08-25 evening — tx id in MEMORY.md; recheck with `npm run cli -- balance` |
+| Proving assets | regenerated 2026-08-25 (~27 MB keys for all four circuits) |
+| Contract | pending DUST accrual + `npm run cli -- deploy` |
 
 ## Live lifecycle (fill immediately after funding)
 

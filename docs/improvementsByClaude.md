@@ -1,9 +1,30 @@
 # Improvements by Claude — second-pass audit (after the Codex upgrade)
 
-*Written 2026-08-25. This is analysis only — no code, contract, or doc outside this file was
-changed. Inputs: the full working tree including the uncommitted upgrade diff,
+*Written 2026-08-25. Inputs: the full working tree including the uncommitted upgrade diff,
 [INNOVATION_AUDIT.md](INNOVATION_AUDIT.md), README, ARCHITECTURE, GAPS, BUILD_BRIEF,
 `nightseal.compact`, `witnesses.ts`, the CLI/service/UI layers, and the 11-case test suite.*
+
+## STATUS (updated 2026-08-25 evening — supersedes §3's sequencing)
+
+| Candidate | State |
+|---|---|
+| **A. Silent revocation** | ✅ **Implemented** — `updateFirmwareLeaf` / `updateComponentLeaf` with `randomBytes(32)` tombstones are live in the contract, CLI, and tests. |
+| **§1 honesty findings + §4 checklist 1–5** | ✅ Done — README attack map, capacity note, softened overclaim, decision-6 wording, unlinkability paragraph all landed; decision 7 fixed this session. |
+| **B. Consensus-level rejection evidence** | 🎯 **Selected as the next build item.** Deploy-safe (no circuit change). Implement **only after** the deploy + evidence + raw-footage gate is dead. Sharpened sketch below. |
+| **C. Split-authority cascade** | ⬇️ Demoted to **post-hackathon**: it reopens the contract while the deploy gate is the whole ballgame, and A already banks the silent-revocation story. Narrate it as the production profile instead. |
+| **D. Vendor-blind approvals / E. Break-glass reveal** | Optional quick wins, only with clear margin after the video exists. |
+| **§4 items 6–8** | Item 8 (record the failed attempt in EVIDENCE.md) folds into the deploy runbook; items 6–7 optional. |
+
+**Sharpened implementation sketch for B** (uses only code that already exists):
+`cli/src/wallet.ts` separates `balanceTx` (build/prove/finalize) from `submitTx`. Wrap the
+`midnightProvider` handed to `buildProviders` with one whose `submitTx` *captures* the
+`FinalizedTransaction` instead of submitting; run `contract.callTx.attest(...)` against the
+pre-revocation state to harvest a fully proven, valid transaction; after the revocation
+transaction confirms, submit the held transaction with the real `wallet.submitTx` and surface
+the node's rejection verbatim (dashboard + `docs/EVIDENCE.md`). Watch for `callTx` blocking on
+finalization after its (captured) submit — race it with a timeout if needed. **Fallback if the
+API resists within ~90 min:** keep today's honest local-failure narrative; the docs already
+never overclaim it.
 
 **Scope discipline:** nothing below may run before the deployment gate is dead
 (faucet → `deploy` → lifecycle tx hashes → raw footage). Every candidate is tagged

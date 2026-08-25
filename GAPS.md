@@ -19,7 +19,14 @@ Known mocks, shortcuts, caveats. Updated every session. Feeds the README's "Assu
 - ~~OneDrive/node_modules friction~~ — working tree moved to WSL at `/root/nightseal`; the Compact compiler has no Windows binary, so WSL was required regardless.
 
 ## Current (update each session)
-- 2026-08-25: **Not yet deployed to Preview.** The faucet is CAPTCHA-gated and needs a human; everything downstream of funding is built and tested but unverified against the live network.
-- The UI is exercised end-to-end against a local mock of the operator service; the on-chain path is covered by the contract test suite but has not yet run against Preview.
-- No browser wallet (Lace) integration — privileged actions go through a local operator service. See ARCHITECTURE.md decision 8.
+- 2026-08-25 evening: **Funded but not yet deployed.** Wallet holds 5,000 tNIGHT; DUST registration was
+  submitted this session — confirm `DUST > 0` with `npm run cli -- balance` before `deploy`.
+- Proving keys regenerated (~27 MB, all four circuits); proof server verified healthy from Windows and WSL.
+- The dashboard's red NON-COMPLIANT state is a *local* proof-construction failure recorded by the operator
+  service — not an on-chain rejection. The planned held-transaction upgrade
+  ([docs/improvementsByClaude.md](docs/improvementsByClaude.md) §2.B) adds a consensus-level rejection;
+  until it lands, scripts and narration must not claim the chain rejected anything.
+- The UI is exercised end-to-end against a local operator service; the on-chain path is covered by the
+  contract test suite but has not yet run against Preview.
+- No browser wallet (Lace) integration — privileged actions go through a local operator service. See ARCHITECTURE.md decision 10.
 - Opaque tombstone replacement is verified in the local simulator, not yet on-chain.

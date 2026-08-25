@@ -75,6 +75,23 @@ Point at the red card's own note: nothing was written on-chain, because proving 
 
 ---
 
+## OPTIONAL Beat 3b (~10s) — only if the held-transaction upgrade landed
+
+*Skip this beat entirely unless the consensus-evidence upgrade
+([improvementsByClaude.md](improvementsByClaude.md) §STATUS/B) is implemented and verified on
+Preview. Never claim an on-chain rejection without it.*
+
+Action: trigger **Replay stale proof** for *Router · fleet-07* — a transaction proven against the
+pre-CVE roots is submitted for real.
+
+> "One more thing. Here is a perfectly valid proof — generated before the revocation. We submit
+> it, and the ledger itself refuses it: the root it proves against no longer exists. Not our
+> server saying no. The chain."
+
+Show the node's rejection in the log panel.
+
+---
+
 ## 2:35–3:00 — The boundary, and close
 
 > "The hardware root of trust is the platform's job — measured boot and a TPM quote. Our contribution is the privacy-preserving transparency layer above it."

@@ -158,7 +158,7 @@ Full engineering ledger: [GAPS.md](GAPS.md) · design rationale and rejected alt
 
 | Path | |
 |---|---|
-| [`contract/src/nightseal.compact`](contract/src/nightseal.compact) | the contract — three circuits, ~100 lines |
+| [`contract/src/nightseal.compact`](contract/src/nightseal.compact) | the contract — four circuits, ~180 lines |
 | [`contract/src/test/`](contract/src/test/) | the lifecycle test suite |
 | [`cli/src/`](cli/src/) | headless wallet, providers, registry operations, operator service |
 | [`ui/src/`](ui/src/) | auditor dashboard |

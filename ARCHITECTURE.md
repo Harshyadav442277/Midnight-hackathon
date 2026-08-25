@@ -21,10 +21,10 @@ All code must conform to this document. If a change requires deviating, update t
 
 ## Where the build environment lives (decision 2026-08-25)
 The Compact compiler ships **no Windows binary** (installer exits with "there isn't a download for your platform"). Docs support Linux/macOS only; Windows via WSL.
-- Canonical working tree: **WSL Ubuntu 26.04 at `/root/nightseal`**, reachable from Windows as `\\wsl.localhost\Ubuntu\root\nightseal`.
+- **GitHub (`Harshyadav442277/Midnight-hackathon`) is the canonical history** (unified 2026-08-25 evening; the pre-upgrade WSL-only history is preserved on the WSL branch `backup/pre-align`).
+- Edits and commits happen on the **Windows checkout** (this folder); **WSL Ubuntu at `/root/nightseal` mirrors `origin/main`** and is where every compile/typecheck/test runs — the Compact compiler has no Windows build. Keep the two in sync through git, not file copies.
 - *Rejected:* building in the OneDrive folder via `/mnt/c` — cross-filesystem npm installs are slow and OneDrive would sync `node_modules`.
-- GitHub (`Harshyadav442277/Midnight-hackathon`) is the durable artifact; push often, since the work lives on a WSL disk.
-- Proof server runs in Docker; WSL must reach it at `localhost:6300` (verify; else run the container from inside WSL via Docker integration).
+- Proof server: Docker Desktop's **Windows** engine runs `nightseal-proof-server`; mirrored networking makes it reachable at `localhost:6300` from Windows *and* WSL (verified 2026-08-25). The `docker` CLI is **not available inside WSL** (WSL integration off) — run all docker commands from Windows.
 
 ## Contract state (Compact ledger)
 ```
@@ -32,7 +32,7 @@ export enum Status { UNKNOWN, COMPLIANT }
 export ledger approvedSet:   MerkleTree<10, Bytes<32>>;  // leaves = firmware COMMITMENTS
 export ledger componentSet:  MerkleTree<10, Bytes<32>>;  // leaves = component COMMITMENTS
 export ledger baselineEpoch: Counter;                    // bumped on any firmware/component policy change
-export ledger deviceIdentity: Map<Bytes<32>, Bytes<32>>; // deviceId -> H(device secret)
+export ledger registeredDeviceKey: Map<Bytes<32>, Bytes<32>>; // deviceId -> H(device secret)
 export ledger deviceStatus:  Map<Bytes<32>, Status>;     // deviceId -> status
 export ledger deviceEpoch:   Map<Bytes<32>, Uint<64>>;   // epoch the device last attested against
 export ledger operatorPk:    Bytes<32>;                  // registry operator identity
@@ -57,7 +57,7 @@ export ledger operatorPk:    Bytes<32>;                  // registry operator id
    - `RE-ATTESTATION REQUIRED` — attested, but `deviceEpoch < baselineEpoch` (amber; every device enters this the instant the baseline changes)
    - `NON-COMPLIANT` — local proof construction failed because a required current-tree path no longer exists; the operator service records that attempt (red)
    Stronger and more honest than a bare green→red flip: after the CVE the clean device goes amber→green while the revoked one goes amber→red, and the difference is produced by cryptography, not by UI state.
-7. **A failed attestation is a rejected transaction**, not a ledger write — recording "this device failed" on-chain would require proving non-membership. The rejection is the evidence; the UI surfaces the verifier error. Recorded in GAPS.md.
+7. **A failed attestation never becomes a transaction at all.** When a required leaf is gone, the witness cannot resolve a current Merkle path, so no proof — and therefore no transaction — can be constructed; recording "this device failed" on-chain would require proving non-membership, which this design refuses. The on-chain evidence of revocation is the root/epoch movement plus the device's now-stale epoch; the local proof-construction error is surfaced by the operator service and labeled as such. A planned upgrade (see [docs/improvementsByClaude.md](docs/improvementsByClaude.md) §2.B) additionally submits a held pre-revocation transaction so the *ledger itself* visibly rejects a stale proof; until that lands, do not describe the red state as an on-chain rejection.
 8. **The component manifest has exactly three slots in the hackathon circuit.** Compact circuits are static; fixed arity keeps proving and deployment risk bounded. This is an explicit demo constraint, not a claim that production SBOMs contain only three components.
 9. Verify all Compact/tooling facts against live docs before writing code — see [docs/TOOLCHAIN_FACTS.md](docs/TOOLCHAIN_FACTS.md).
 10. **The web app uses a headless operator service, not a browser wallet extension.**
@@ -78,3 +78,5 @@ export ledger operatorPk:    Bytes<32>;                  // registry operator id
 - 2026-08-25: target network **Preview** (`setNetworkId('preview')`), indexer `https://indexer.preview.midnight.network/api/v4/graphql`, explorer `https://preview.midnightexplorer.com/`.
 - 2026-08-25: base the repo layout on **example-bboard** (active) rather than example-counter (archived).
 - 2026-08-25: flagship upgrade = firmware capabilities bound to private three-slot component manifests, with a second current-only Merkle root for cascading component revocation. Secondary = registered device-secret proof-of-possession. Implemented stretch = operation-hiding leaf updates with opaque tombstones. Full ranking: [docs/INNOVATION_AUDIT.md](docs/INNOVATION_AUDIT.md).
+- 2026-08-25 (evening): git histories unified on GitHub `main`; WSL tree reset to `origin/main` (snapshot kept on `backup/pre-align`); proving keys regenerated; unused dependencies (`dapp-connector-api`, `fetch-zk-config-provider`, `ts-node`, direct `axios`/`ws`) and dead code (`lastPath`, `getPrivateState`) removed.
+- 2026-08-25 (evening): next upgrade selected = **consensus-evidence stale-proof rejection** (deploy-safe, no circuit change): build a valid attestation transaction before revocation, submit it after, and let the ledger's current-root check refuse it publicly. Design, fallback, and sequencing: [docs/improvementsByClaude.md](docs/improvementsByClaude.md). Split-authority (regulator key for the component tree) demoted to post-hackathon.
