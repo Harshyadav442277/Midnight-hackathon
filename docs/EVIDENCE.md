@@ -14,15 +14,37 @@
 | **Contract (Preview)** | `160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e` — deployed 2026-08-25 ~16:16 IST |
 | **Explorer** | https://preview.midnightexplorer.com/contract/160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e |
 
-## Live lifecycle (fill immediately after funding)
+## Bootstrap — all nine transactions confirmed on Preview (2026-08-25 11:18–11:22 UTC)
+
+Baseline after bootstrap: **epoch 7**
+· firmware root `1745636128736094226352452322422029702955587615436897047336384466937955749568`
+· component root `39672010876196885146161952834607207542719471899791519010124305427177892939627`
+
+| # | Operation | Transaction |
+|---|---|---|
+| 1 | registerDevice (Router · fleet-07) | `0664ad3feff3d170659d9d48554b5a6e8740495530d42e31c7ebc3cf9a0e7ee9` |
+| 2 | registerDevice (Sensor gateway · 02) | `1455db113feeeffbf18ca85918cca85b969c69288144989877ca698ca3f983ee` |
+| 3 | registerDevice (Edge camera · 11) | `882e05eda769182bdb6ec5c1b4b50eb8e24709c0f2c358b1bc1fd589fc585c81` |
+| 4 | updateComponentLeaf (Secure Boot Core 6, leaf 0) | `d1bc66870d709c8df3b71c60cfa0837407627ed810a159b3c678067eb8a03100` |
+| 5 | updateComponentLeaf (Linux LTS 6.12, leaf 1) | `dbb6d82f7705ef665e2904d94927f655b490ccbd3a2f04516ad44352b11d8dce` |
+| 6 | updateComponentLeaf (TLS Runtime 3.4, leaf 2) | `8cf92a9b40e2435b634fbe5237baa0a486e8bed9175fda2aec42f62583b72ed2` |
+| 7 | updateComponentLeaf (TLS Runtime 3.0, leaf 3) | `5b8fa58ca9b5a9f23ee3601996c1d049abef6f2f8cfeacb06739e754cbbe5baf` |
+| 8 | updateFirmwareLeaf (clean build, leaf 0) | `fc3170171b7cc4370805e35bfcd82141a5950880c558168cbd778f7b21dd05e9` |
+| 9 | updateFirmwareLeaf (vulnerable build, leaf 1) | `d9385546564147233c7cb5380fdba1a98ba2000c6e0cb31d667e070b09d94263` |
+
+Note that transactions 4–9 are **indistinguishable in shape** from a revocation or a cover
+rotation: every one is `update*Leaf(value, index)` carrying an opaque 32-byte value.
+
+## Live lifecycle
 
 | Beat | Expected cryptographic state | Transaction / evidence |
 |---|---|---|
-| Deploy + bootstrap | registered device commitments; firmware and component roots populated | pending |
+| Deploy + bootstrap | registered device commitments; firmware and component roots populated | ✅ above — 9 transactions, epoch 7 |
 | PASS | registered identity + firmware + three components prove current | pending |
 | Opaque component update | component root and epoch move; firmware root stays unchanged | pending |
 | Clean recovery | unaffected device re-attests at new epoch | pending |
 | Selective FAIL | affected device cannot resolve a current component path; no tx is submitted | pending error capture |
+| **Consensus FAIL (replay)** | a proof valid against the pre-revocation roots is submitted after the roots move; the **ledger** rejects it at apply time | pending |
 
 ## Verified local evidence
 

@@ -155,6 +155,8 @@ button:hover:not(:disabled) { background: #1e2836; border-color: #35455a; }
 button:disabled { opacity: 0.55; cursor: progress; }
 button.danger { width: auto; color: #fecaca; border-color: rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.1); }
 button.danger:hover:not(:disabled) { background: rgba(239, 68, 68, 0.18); border-color: var(--bad); }
+button.ghost { width: auto; color: var(--ink-dim); background: transparent; font-weight: 500; }
+button.ghost:hover:not(:disabled) { color: var(--ink); background: var(--panel-2); }
 
 /* ---------- operator ---------- */
 
@@ -171,6 +173,7 @@ button.danger:hover:not(:disabled) { background: rgba(239, 68, 68, 0.18); border
   background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
 }
 .builds h4 { margin: 0; font-size: 14.5px; font-family: var(--mono); font-weight: 600; }
+.component-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; align-items: stretch; }
 .note { margin: 4px 0 0; font-size: 13px; color: var(--ink-dim); }
 .affects { margin: 4px 0 0; font-size: 12px; color: var(--ink-faint); }
 
@@ -205,5 +208,5 @@ footer {
   .chain { align-items: flex-start; }
   .baseline { grid-template-columns: 1fr; }
   .builds li { flex-direction: column; align-items: stretch; }
-  button.danger { width: 100%; }
+  button.danger, button.ghost { width: 100%; }
 }

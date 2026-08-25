@@ -6,7 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 
 import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
-import type { FinalizedTransaction } from '@midnight-ntwrk/midnight-js-protocol/ledger';
+import type { UnboundTransaction } from '@midnight-ntwrk/midnight-js-types';
 import {
   NightSealContract,
   createNightSealPrivateState,
@@ -254,36 +254,41 @@ export const attestDevice = async (
 };
 
 /**
- * Prove a device's attestation but keep the finalized transaction instead of sending it.
+ * Prove a device's attestation and keep it, unbalanced, instead of sending it.
  *
  * The proof is honest — it demonstrates Merkle paths to the roots that are current right
  * now, and those roots go into the transaction's public transcript. If the baseline moves
  * before the transaction is applied, the ledger replays that transcript against present
- * state, its own `checkRoot` query answers differently, and consensus rejects the
- * transaction. That turns a stale proof's failure into a chain verdict instead of a local
- * one.
+ * state, its own `checkRoot` query answers differently, and consensus rejects it. That
+ * turns a stale proof's failure into a chain verdict instead of a local one.
+ *
+ * Capture happens at `balanceTx`, before fees are attached, because a balanced transaction
+ * reserves the wallet's DUST — holding one would starve the revocation that has to follow.
  */
 export const buildHeldAttestation = async (
   providers: NightSealProviders,
   contractAddress: string,
   device: Device,
   provisioningSeed: string,
-): Promise<FinalizedTransaction> => {
+): Promise<UnboundTransaction> => {
   const build = buildForDevice(device);
-  let capture!: (tx: FinalizedTransaction) => void;
-  const held = new Promise<FinalizedTransaction>((resolve) => {
+  const wallet = providers.walletProvider;
+  let capture!: (tx: UnboundTransaction) => void;
+  const held = new Promise<UnboundTransaction>((resolve) => {
     capture = resolve;
   });
 
-  // Only submitTx is swapped; everything else (proving, balancing, signing) is the real
-  // path, so the captured transaction is exactly what the device would have sent. The
-  // cast is needed because the provider bundle is typed to the concrete wallet class.
+  // Proving is the real path; only fee-balancing is intercepted. Throwing afterwards ends
+  // the call cleanly, since there is nothing left for it to submit. Methods are delegated
+  // explicitly because the provider bundle is typed to the concrete wallet class.
   const capturing = {
     ...providers,
-    midnightProvider: {
-      submitTx: async (tx: FinalizedTransaction): Promise<string> => {
+    walletProvider: {
+      getCoinPublicKey: () => wallet.getCoinPublicKey(),
+      getEncryptionPublicKey: () => wallet.getEncryptionPublicKey(),
+      balanceTx: async (tx: UnboundTransaction): Promise<never> => {
         capture(tx);
-        return '0'.repeat(64);
+        throw new Error('NightSeal: attestation held for replay');
       },
     },
   } as unknown as NightSealProviders;
@@ -295,19 +300,21 @@ export const buildHeldAttestation = async (
   );
 
   logger.info(`${device.label} is proving an attestation against the CURRENT baseline...`);
-  // This call then waits for a confirmation that cannot arrive, because nothing was sent.
-  // The captured transaction is the result we want; let the call settle however it likes.
   void contract.callTx.attest(deviceKey(device)).catch(() => undefined);
   return held;
 };
 
-/** Send a previously held transaction and report the ledger's verdict. */
+/**
+ * Balance and send a previously held attestation, then report the ledger's verdict.
+ * Balancing happens here so the DUST is only committed once the transaction is going out.
+ */
 export const submitHeldAttestation = async (
   providers: NightSealProviders,
-  tx: FinalizedTransaction,
+  held: UnboundTransaction,
 ): Promise<{ accepted: boolean; detail: string }> => {
   try {
-    const txHash = await providers.midnightProvider.submitTx(tx);
+    const finalized = await providers.walletProvider.balanceTx(held);
+    const txHash = await providers.midnightProvider.submitTx(finalized);
     return { accepted: true, detail: txHash };
   } catch (err) {
     return { accepted: false, detail: err instanceof Error ? err.message : String(err) };

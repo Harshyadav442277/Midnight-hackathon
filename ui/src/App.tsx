@@ -152,6 +152,13 @@ export const App = (): React.ReactElement => {
               `/api/revoke-component/${component.id}`,
             )
           }
+          onReplay={(component, deviceId) => {
+            const device = state.devices.find((d) => d.id === deviceId);
+            return act(
+              `Replay stale proof for ${device?.label ?? deviceId}`,
+              `/api/replay/${deviceId}/${component.id}`,
+            );
+          }}
         />
       )}
 
