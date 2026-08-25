@@ -5,11 +5,12 @@
 ## Phase 0 — kill the disqualification gate (budget ~4h, by ~14:00 IST Aug 25)
 - [x] Git repo init + remote (github.com/Harshyadav442277/Midnight-hackathon)
 - [x] Doc system created (PRD, ARCHITECTURE, GAPS, MEMORY, TASKS, CLAUDE, DEMO_SCRIPT)
-- [~] Verify current toolchain/network facts against live docs (research workflow)
-- [ ] Install Compact compiler + dev tools; `compact compile` works on a hello contract
-- [ ] Proof server running in Docker (version-matched to compiler)
-- [ ] Test wallet created (headless, seed in .env); tDUST requested from faucet **EARLY**
-- [ ] Stub contract deployed to Preview or PreProd; explorer entry screenshot saved to docs/
+- [x] Verify current toolchain/network facts against live docs → docs/TOOLCHAIN_FACTS.md
+- [x] Install Compact compiler + dev tools (WSL Ubuntu; no Windows binary exists)
+- [x] Proof server running in Docker (`midnightntwrk/proof-server:8.1.0`, healthy on :6300)
+- [x] Test wallet created (headless, seed in .env)
+- [~] tDUST from faucet — **CAPTCHA-gated, needs the user**; then `npm start -- dust`
+- [ ] Contract deployed to Preview; explorer entry screenshot saved to docs/
 - [ ] Update CLAUDE.md "Commands" with real, verified commands
 
 ## Phase 1 — the real contract (budget ~8–10h)

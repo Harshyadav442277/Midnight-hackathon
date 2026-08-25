@@ -1,0 +1,10 @@
+{
+  "name": "@nightseal/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-strip-types --no-warnings src/main.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}
