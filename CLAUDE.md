@@ -19,11 +19,11 @@ The Compact compiler has no Windows build, so everything below runs in WSL.
 
 - Compile contract: `npm run compact` — fast iteration: `npm run compact:fast --workspace contract` (`--skip-zk`, ~0.3s)
 - Typecheck everything: `npm run typecheck`
-- Test: `npm test` (9 lifecycle tests)
+- Test: `npm test` (11 lifecycle/adversarial tests)
 - Build all: `npm run build`
 - Proof server: `docker run -d --name nightseal-proof-server -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v`
   (health check is `GET /`, not `/health`)
-- CLI: `npm run cli -- <address|balance|dust|deploy|approve|revoke <build>|attest <device>|status>`
+- CLI: `npm run cli -- <address|balance|dust|deploy|approve|revoke-component <component>|revoke <build>|attest <device>|status>`
 - Operator service + dashboard: `npm run serve` → http://localhost:8787
 - UI dev server: `npm run dev --workspace ui`
 
