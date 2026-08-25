@@ -1,59 +1,56 @@
 # MEMORY — session continuity
 
-## Current status (2026-08-25, ~17:05 IST)
-- Deadline 2026-08-27 07:00 IST (~T-38h). Student eligibility confirmed.
-- **DEPLOYED AND BOOTSTRAPPED on Midnight Preview.** The disqualification gate is dead.
-  Contract `160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e`.
-  Nine bootstrap transactions + two attestations are on-chain; hashes in docs/EVIDENCE.md.
-- **Public read-only dashboard: https://nightseal.vercel.app** (Vercel project `nightseal`,
-  env `NIGHTSEAL_CONTRACT_ADDRESS`; `/api/state` verified live). Redeploy with
-  `vercel deploy --prod --yes` from the Windows checkout.
-- **Git:** GitHub `main` is canonical. Edit/commit on the Windows checkout; WSL
-  `/root/nightseal` mirrors `origin/main` and runs all builds. Sync = push from Windows,
-  then `git fetch && git reset --hard origin/main` in WSL. Never copy files between them.
-- Baseline green: typecheck clean, 11/11 tests, UI production build.
+## Current status (2026-08-25, ~17:35 IST)
+- Deadline 2026-08-27 07:00 IST (~T-37h). Student eligibility confirmed.
+- **Everything technical is DONE and verified on-chain.** What remains is the demo video and
+  the Devpost form — both human tasks.
+- Contract on Preview: `160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e`
+- Public read-only dashboard: **https://nightseal.vercel.app** (live, serving indexer state)
+- Repo: GitHub `main` is canonical, everything pushed and clean.
 
-## Two real bugs found and fixed this session (do not regress)
-1. **Duplicate WASM runtime.** `compact-runtime` accepts `^3.0.0` (npm hoisted 3.1.0) while
-   `midnight-js-protocol` pins 3.0.0 (nested copy) → two `StateValue` classes → *every* live
-   `callTx` failed with `expected instance of StateValue`. Deploys and simulator tests do not
-   cross that boundary, which is why tests passed while the chain path was broken. Fixed with a
-   root `overrides` pin + `npm dedupe`. Verify with `npm ls @midnight-ntwrk/onchain-runtime-v3`
-   — exactly one version must resolve.
-2. **Private-state address scoping.** The level provider throws unless
-   `setContractAddress()` is called before any state access; `joinRegistry` now does it.
+## What was proven on-chain (docs/EVIDENCE.md has every hash)
+The complete lifecycle ran against the live Preview registry:
+1. Both devices attested COMPLIANT.
+2. One hidden component (TLS Runtime 3.0) was revoked with an opaque tombstone.
+   **The firmware root came back byte-identical; only the component root moved.**
+3. The clean device re-attested successfully; the secretly dependent device could not build a
+   proof at all (`ContractRuntimeError`, nothing submitted).
+4. **Consensus rejection verified:** a proof built before the revocation was submitted after it
+   and the node refused the transaction (`1010: Invalid Transaction: Custom error: 104`). The
+   revocation is enforced by the chain, not by our service.
 
-## Lifecycle capture — how to do it fast
-Each CLI command re-syncs the wallet from scratch (~10 min). **Do not drive the lifecycle with
-CLI commands.** Start `npm run serve` once (one sync, then it stays warm) and drive it over
-HTTP — each action then takes seconds:
+## Ready to film — the chain is in a clean demo state
+**Epoch 14, all components approved, both devices COMPLIANT.** The demo can be run from the top.
+A service was started on the final code (`logs/serve-final.log`); it needs one ~10-minute wallet
+sync before :8787 answers. To film:
 ```
-curl -X POST http://localhost:8787/api/attest/sensor-gateway-02
-curl -X POST http://localhost:8787/api/revoke-component/tls-3.0-cve
-curl -X POST http://localhost:8787/api/replay/router-fleet-07/tls-3.0-cve
-curl -s http://localhost:8787/api/state
+docker start nightseal-proof-server      # from WINDOWS, not WSL
+npm run serve                            # wait for "operator service on ..."; open :8787
 ```
-The dashboard at :8787 is the same thing with buttons (that is what gets filmed).
+Follow [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). Use the **"Revoke + replay stale proof"**
+button for beat 2/3b — it revokes and then gets refused by the ledger in one action.
 
-## Where the lifecycle stands
-- ✅ Beat 1 PASS: both devices COMPLIANT at epoch 7 (tx hashes in docs/EVIDENCE.md).
-- ⏳ Beats 2–4 remain: component revocation, clean recovery, selective failure, and the
-  consensus replay. State is currently clean at **epoch 7 with nothing revoked**, so the
-  sequence can be run from the top.
-- **Phase B (consensus replay) is implemented but NOT yet verified on Preview.** It proves an
-  attestation, revokes the component, then submits the stale proof so the *ledger* rejects it.
-  First attempt failed with `could not balance dust` because a balanced held transaction
-  reserves the wallet's DUST; fixed by capturing at `balanceTx` instead (proven but unbalanced)
-  and balancing only after the revocation. **README beat 4, DEMO_SCRIPT beat 3b, and the
-  EVIDENCE row all claim this works — if live verification fails, soften them back.**
+**To reset between takes:** `curl -X POST http://localhost:8787/api/approve` (republishes
+everything, restoring the revoked component; epoch bumps by 6), then attest both devices.
+
+## Hard-won infrastructure knowledge (do not regress)
+1. **Duplicate WASM runtime broke every live transaction.** `compact-runtime` accepts `^3.0.0`
+   (npm hoisted 3.1.0) while `midnight-js-protocol` pins 3.0.0 → two `StateValue` classes →
+   `expected instance of StateValue` on every `callTx`. Deploys and simulator tests never cross
+   that boundary, so tests passed while the chain path was broken. Fixed with a root `overrides`
+   pin + `npm dedupe`. Verify: `npm ls @midnight-ntwrk/onchain-runtime-v3` → exactly one version.
+2. **Private-state scoping:** the level provider throws unless `setContractAddress()` is called
+   before any state access. `joinRegistry` does it.
+3. **Holding a balanced transaction starves the next one of DUST.** The replay feature captures
+   at `balanceTx` (proven but unbalanced) and balances only after the revocation.
+4. **Deploy-then-bootstrap in one process hits indexer lag.** Wait a minute, then
+   `npm run cli -- approve` (idempotent).
+5. Every wallet process re-syncs Preview from genesis (~10 min). Drive the lifecycle over HTTP
+   against one warm `serve` process — never with repeated CLI commands.
 
 ## Gotchas
 - Invoke WSL as `wsl.exe -d Ubuntu bash -lc '<cmd>'`; the direct form can return empty output.
-- Docker runs on the **Windows** engine only (`docker start nightseal-proof-server`); the CLI
-  does not exist inside WSL. Proof server must be healthy on :6300 before any proving.
-- WSL `/tmp` does not survive VM restarts — keep logs under `/root/nightseal/logs/` (gitignored).
-- Deploy-then-bootstrap in one process can hit indexer lag (`expected instance of StateValue`
-  seconds after deploy). Wait a minute and run `npm run cli -- approve` — it is idempotent.
-- A failed post-revocation attest stops during local witness resolution and writes nothing
-  on-chain. Only the *replay* path produces a chain-level rejection.
+- Docker runs on the **Windows** engine only; the `docker` CLI does not exist inside WSL.
+- WSL `/tmp` does not survive VM restarts — keep logs in `/root/nightseal/logs/` (gitignored).
 - Never commit `.env` (WSL-only, gitignored, survives `git reset --hard`).
+- Redeploy the public dashboard with `vercel deploy --prod --yes` from the Windows checkout.
