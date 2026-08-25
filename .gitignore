@@ -14,6 +14,10 @@ build/
 # midnight artifacts that are machine-local
 .level/
 private-state/
+# LevelDB store the private-state provider creates at runtime. It holds device secrets,
+# firmware measurements, and commitment openings — never commit it.
+midnight-level-db/
+*-level-db/
 logs/
 *.log
 

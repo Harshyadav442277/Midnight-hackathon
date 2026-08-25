@@ -20,7 +20,7 @@ The complete lifecycle ran against the live Preview registry:
    revocation is enforced by the chain, not by our service.
 
 ## Ready to film — the chain is in a clean demo state
-**Epoch 14, all components approved, both devices COMPLIANT.** The demo can be run from the top.
+**Epoch 21, all components approved, both devices COMPLIANT.** The demo can be run from the top.
 The operator service is **not** left running (it dies with the session, and every start costs one
 ~10-minute wallet sync). Start it yourself and wait for `operator service on ...`. To film:
 ```
