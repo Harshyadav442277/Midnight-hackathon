@@ -5,7 +5,7 @@ type Presentation = { pill: string; blurb: string; tone: string };
 const BY_STATUS: Record<DeviceView['status'], Presentation> = {
   COMPLIANT: {
     pill: 'COMPLIANT',
-    blurb: 'Proved membership of the current approved baseline.',
+    blurb: 'Registered identity, firmware, and bound components proved current.',
     tone: 'good',
   },
   'RE-ATTESTATION REQUIRED': {
@@ -30,7 +30,7 @@ const presentationFor = (device: DeviceView, baselineEpoch: string): Presentatio
   if (attempt && !attempt.ok && attempt.epoch === baselineEpoch && device.status !== 'COMPLIANT') {
     return {
       pill: 'NON-COMPLIANT',
-      blurb: 'Re-attestation was rejected: its firmware is no longer in the approved baseline.',
+      blurb: 'Proof rejected: its firmware or a privately bound component is no longer current.',
       tone: 'bad',
     };
   }
@@ -68,6 +68,12 @@ export const DeviceCard = ({
       </div>
 
       <p className="blurb">{blurb}</p>
+
+      <p className={`identity ${device.identityRegistered ? 'bound' : 'missing'}`}>
+        {device.identityRegistered
+          ? 'Device-bound proof · registered secret required'
+          : 'Device identity not registered'}
+      </p>
 
       <dl className="facts">
         <div>

@@ -56,7 +56,7 @@ body {
 /* ---------- baseline strip ---------- */
 
 .baseline {
-  display: grid; grid-template-columns: auto auto 1fr; gap: 1px;
+  display: grid; grid-template-columns: auto auto auto 1fr; gap: 1px;
   background: var(--line); border: 1px solid var(--line);
   border-radius: var(--radius); overflow: hidden; margin: 24px 0 28px;
 }
@@ -130,6 +130,13 @@ body {
 .bad .pill { color: #fca5a5; background: var(--bad-bg); }
 
 .blurb { margin: 10px 0 16px; color: var(--ink-dim); font-size: 13.5px; min-height: 38px; }
+
+.identity {
+  margin: -5px 0 16px; font-family: var(--mono); font-size: 11.5px;
+  color: var(--ink-faint);
+}
+.identity.bound { color: #86efac; }
+.identity.missing { color: #fca5a5; }
 
 .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 16px; }
 .facts dt {

@@ -1,43 +1,53 @@
-import type { BuildView, RegistryState } from './types.ts';
+import type { ComponentView, RegistryState } from './types.ts';
 
 type Props = {
   state: RegistryState;
   busy: string | null;
-  onRevoke: (build: BuildView) => void;
+  onRevokeComponent: (component: ComponentView) => void;
 };
 
-export const OperatorPanel = ({ state, busy, onRevoke }: Props): React.ReactElement => (
+export const OperatorPanel = ({
+  state,
+  busy,
+  onRevokeComponent,
+}: Props): React.ReactElement => (
   <section className="operator">
     <div className="operator-head">
-      <h2>Registry operator</h2>
+      <h2>Private dependency policy</h2>
       <p>
-        Approved firmware builds are published as opaque commitments. Revoking one removes its
-        leaf, which changes the root — and every proof built against the old baseline stops
-        verifying.
+        Each firmware capability privately commits to three component capabilities. Revoke one
+        component and every dependent firmware image loses the ability to prove compliance —
+        without publishing which builds depended on it. This dependency view exists only in the
+        operator's local service; the public chain sees opaque commitments and two roots.
       </p>
     </div>
 
     <ul className="builds">
-      {state.builds.map((build) => {
-        const affected = state.fleet.filter((d) => d.buildId === build.id);
-        const label = `Revoke ${build.version}`;
+      {state.components.map((component) => {
+        const affectedBuilds = state.builds.filter((b) =>
+          b.componentIds.includes(component.id),
+        );
+        const affectedDevices = state.fleet.filter((device) =>
+          affectedBuilds.some((build) => build.id === device.buildId),
+        );
+        const label = `Revoke hidden component ${component.label}`;
         return (
-          <li key={build.id}>
+          <li key={component.id}>
             <div>
-              <h4>{build.version}</h4>
-              <p className="note">{build.note}</p>
+              <h4>{component.label}</h4>
+              <p className="note">{component.note}</p>
               <p className="affects">
-                leaf {build.index} · {affected.length} device{affected.length === 1 ? '' : 's'}:{' '}
-                {affected.map((d) => d.label).join(', ')}
+                private operator view · component leaf {component.index} · affects{' '}
+                {affectedDevices.length} device{affectedDevices.length === 1 ? '' : 's'}
               </p>
             </div>
             <button
               type="button"
               className="danger"
-              onClick={() => onRevoke(build)}
+              onClick={() => onRevokeComponent(component)}
               disabled={busy === label}
             >
-              {busy === label ? 'Publishing…' : 'Revoke (CVE)'}
+              {busy === label ? 'Moving root…' : 'Revoke component (CVE)'}
             </button>
           </li>
         );

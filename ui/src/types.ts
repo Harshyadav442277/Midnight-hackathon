@@ -11,12 +11,21 @@ export type DeviceView = {
   label: string;
   status: DeviceStatus;
   epoch: string | null;
+  identityRegistered: boolean;
   lastAttempt: Attempt | null;
 };
 
 export type BuildView = {
   id: string;
   version: string;
+  index: string;
+  note: string;
+  componentIds: [string, string, string];
+};
+
+export type ComponentView = {
+  id: string;
+  label: string;
   index: string;
   note: string;
 };
@@ -26,12 +35,14 @@ export type RegistryState = {
   readOnly?: boolean;
   baselineEpoch: string;
   approvedRoot: string;
+  componentRoot: string;
   contractAddress: string;
   explorer: string;
   explorerBase: string;
   network: string;
   devices: DeviceView[];
   builds: BuildView[];
+  components: ComponentView[];
   fleet: { id: string; label: string; buildId: string }[];
 };
 

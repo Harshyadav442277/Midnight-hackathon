@@ -39,6 +39,7 @@ export const App = (): React.ReactElement => {
   useEffect(() => {
     if (!state) return;
     if (previousEpoch.current !== null && previousEpoch.current !== state.baselineEpoch) {
+      previousEpoch.current = state.baselineEpoch;
       setEpochPulse(true);
       const id = setTimeout(() => setEpochPulse(false), 2200);
       return () => clearTimeout(id);
@@ -103,14 +104,18 @@ export const App = (): React.ReactElement => {
           <span className="v">epoch {state?.baselineEpoch ?? '—'}</span>
         </div>
         <div className="root">
-          <span className="k">Approved-set Merkle root</span>
+          <span className="k">Firmware capability root</span>
           <code className="v">{state ? shorten(state.approvedRoot, 18, 12) : '—'}</code>
+        </div>
+        <div className="root">
+          <span className="k">Component capability root</span>
+          <code className="v">{state ? shorten(state.componentRoot, 18, 12) : '—'}</code>
         </div>
         <div className="privacy">
           <span className="k">On this page, from the public chain</span>
           <span className="v">
-            device id · compliance status · epoch · root
-            <em> — no firmware hash, version, or SBOM exists on-chain</em>
+            device id · registered identity commitment · status · epoch · two roots
+            <em> — no firmware, version, or component graph exists on-chain</em>
           </span>
         </div>
       </section>
@@ -141,7 +146,12 @@ export const App = (): React.ReactElement => {
         <OperatorPanel
           state={state}
           busy={busy}
-          onRevoke={(build) => act(`Revoke ${build.version}`, `/api/revoke/${build.id}`)}
+          onRevokeComponent={(component) =>
+            act(
+              `Revoke hidden component ${component.label}`,
+              `/api/revoke-component/${component.id}`,
+            )
+          }
         />
       )}
 
