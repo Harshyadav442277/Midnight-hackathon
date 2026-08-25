@@ -21,11 +21,6 @@ export type NightSealPrivateState = {
   readonly components: ComponentVector;
   /** Openings for the corresponding approved-component commitments. */
   readonly componentRandomness: ComponentVector;
-  /**
-   * Last Merkle path this device successfully attested with. Kept so the demo can
-   * replay a stale proof against a new baseline and show it being rejected.
-   */
-  readonly lastPath?: MerkleTreePath<Uint8Array>;
 };
 
 export const createNightSealPrivateState = (
@@ -96,7 +91,7 @@ export const witnesses = {
         'This firmware is not in the current approved baseline — it was never approved, or it has been revoked.',
       );
     }
-    return [{ ...privateState, lastPath: path }, path];
+    return [privateState, path];
   },
 
   /** Resolve one hidden component against the current component capability set. */

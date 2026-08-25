@@ -41,10 +41,6 @@ export class NightSealSimulator {
     return ledger(this.circuitContext.currentQueryContext.state);
   }
 
-  public getPrivateState(): NightSealPrivateState {
-    return this.circuitContext.currentPrivateState;
-  }
-
   public componentCommitment(measurement: Uint8Array, randomness: Uint8Array): Uint8Array {
     return this.contract.circuits.componentCommitment(
       this.circuitContext,

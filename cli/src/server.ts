@@ -12,7 +12,7 @@ import { extname, join, normalize } from 'node:path';
 
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
-import { EXPLORER, PREVIEW, explorerContract } from './config.ts';
+import { EXPLORER, PREVIEW, explorerContract, explorerTx } from './config.ts';
 import { loadEnv, seedFor } from './env.ts';
 import { BUILDS, COMPONENTS, DEVICES, buildById, componentById, deviceById } from './fleet.ts';
 import { logger } from './logger.ts';
@@ -137,7 +137,7 @@ const handle = async (
         attestDevice(ctx.providers, ctx.contractAddress, device, ctx.seed),
       );
       attempts.set(device.id, { ok: true, at: new Date().toISOString(), epoch });
-      return { status: 200, body: { ok: true, txHash, explorer: `${EXPLORER}/tx/${txHash}` } };
+      return { status: 200, body: { ok: true, txHash, explorer: explorerTx(txHash) } };
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
       attempts.set(device.id, { ok: false, error, at: new Date().toISOString(), epoch });
@@ -150,7 +150,7 @@ const handle = async (
     const txHash = await serialise(() =>
       revokeBuild(ctx.providers, ctx.contractAddress, ctx.seed, build),
     );
-    return { status: 200, body: { ok: true, txHash, explorer: `${EXPLORER}/tx/${txHash}` } };
+    return { status: 200, body: { ok: true, txHash, explorer: explorerTx(txHash) } };
   }
 
   if (method === 'POST' && path.startsWith('/api/revoke-component/')) {
@@ -160,7 +160,7 @@ const handle = async (
     const txHash = await serialise(() =>
       revokeComponent(ctx.providers, ctx.contractAddress, ctx.seed, component),
     );
-    return { status: 200, body: { ok: true, txHash, explorer: `${EXPLORER}/tx/${txHash}` } };
+    return { status: 200, body: { ok: true, txHash, explorer: explorerTx(txHash) } };
   }
 
   if (method === 'POST' && path === '/api/approve') {
