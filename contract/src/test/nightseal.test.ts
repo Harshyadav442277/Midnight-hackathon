@@ -1,178 +1,287 @@
 /**
- * The NightSeal lifecycle, end to end, in one file.
+ * NightSeal's two cryptographic gates, exercised end to end:
  *
- * These tests are the product claim: a device with approved firmware can prove
- * compliance without revealing the firmware, and the moment the operator revokes
- * that firmware the device can no longer produce a passing attestation — while an
- * unaffected device still can.
+ * 1. a prover must control the registered device identity; and
+ * 2. its hidden firmware plus every component bound into it must remain current.
  */
 
 import { describe, expect, it } from 'vitest';
 
 import { NightSealSimulator } from './nightseal-simulator.js';
 import { bytes32, toHex } from './utils.js';
-import { createNightSealPrivateState, type NightSealPrivateState } from '../witnesses.js';
+import {
+  createNightSealPrivateState,
+  type ComponentVector,
+  type NightSealPrivateState,
+} from '../witnesses.js';
 
 const OPERATOR_KEY = bytes32('operator-secret');
 const ROGUE_KEY = bytes32('rogue-operator-secret');
 
-// Two devices running two different approved firmware builds.
-const CLEAN = {
-  deviceId: bytes32('device:sensor-gateway-02'),
+type ComponentFixture = {
+  measurement: Uint8Array;
+  randomness: Uint8Array;
+  index: bigint;
+};
+
+type BuildFixture = {
+  measurement: Uint8Array;
+  randomness: Uint8Array;
+  index: bigint;
+  components: readonly [ComponentFixture, ComponentFixture, ComponentFixture];
+};
+
+type DeviceFixture = {
+  deviceId: Uint8Array;
+  secret: Uint8Array;
+  build: BuildFixture;
+};
+
+const component = (label: string, index: bigint): ComponentFixture => ({
+  measurement: bytes32(`component:${label}`),
+  randomness: bytes32(`component-randomness:${label}`),
+  index,
+});
+
+const BOOT = component('secure-boot-6', 0n);
+const KERNEL = component('linux-lts-6.12', 1n);
+const TLS_CLEAN = component('tls-3.4-hardened', 2n);
+const TLS_VULNERABLE = component('tls-3.0-cve-2026-11xx', 3n);
+const ALL_COMPONENTS = [BOOT, KERNEL, TLS_CLEAN, TLS_VULNERABLE] as const;
+
+const CLEAN_BUILD: BuildFixture = {
   measurement: bytes32('firmware:v2.4.1-clean'),
-  randomness: bytes32('rand:clean'),
+  randomness: bytes32('firmware-randomness:clean'),
   index: 0n,
+  components: [BOOT, KERNEL, TLS_CLEAN],
 };
-const VULNERABLE = {
-  deviceId: bytes32('device:router-fleet-07'),
+
+const VULNERABLE_BUILD: BuildFixture = {
   measurement: bytes32('firmware:v2.3.9-cve-2026-11xx'),
-  randomness: bytes32('rand:vulnerable'),
+  randomness: bytes32('firmware-randomness:vulnerable'),
   index: 1n,
+  components: [BOOT, KERNEL, TLS_VULNERABLE],
 };
 
-const operatorState = (): NightSealPrivateState =>
-  createNightSealPrivateState(OPERATOR_KEY, bytes32('unused'), bytes32('unused'));
+const CLEAN: DeviceFixture = {
+  deviceId: bytes32('device:sensor-gateway-02'),
+  secret: bytes32('device-secret:sensor-gateway-02'),
+  build: CLEAN_BUILD,
+};
 
-const deviceState = (d: typeof CLEAN): NightSealPrivateState =>
-  createNightSealPrivateState(bytes32('device-key'), d.measurement, d.randomness);
+const VULNERABLE: DeviceFixture = {
+  deviceId: bytes32('device:router-fleet-07'),
+  secret: bytes32('device-secret:router-fleet-07'),
+  build: VULNERABLE_BUILD,
+};
 
-/** Operator deploys and approves both firmware builds. */
+const UNUSED: ComponentVector = [bytes32('unused-0'), bytes32('unused-1'), bytes32('unused-2')];
+
+const operatorState = (key = OPERATOR_KEY): NightSealPrivateState =>
+  createNightSealPrivateState(key, bytes32('unused'), bytes32('unused'), UNUSED, UNUSED);
+
+const values = (
+  items: readonly [ComponentFixture, ComponentFixture, ComponentFixture],
+  pick: (item: ComponentFixture) => Uint8Array,
+): ComponentVector => [pick(items[0]), pick(items[1]), pick(items[2])];
+
+const deviceState = (
+  device: DeviceFixture,
+  build: BuildFixture = device.build,
+): NightSealPrivateState =>
+  createNightSealPrivateState(
+    device.secret,
+    build.measurement,
+    build.randomness,
+    values(build.components, (c) => c.measurement),
+    values(build.components, (c) => c.randomness),
+  );
+
+const componentCommitment = (
+  sim: NightSealSimulator,
+  item: ComponentFixture,
+): Uint8Array => sim.componentCommitment(item.measurement, item.randomness);
+
+const firmwareCommitment = (sim: NightSealSimulator, build: BuildFixture): Uint8Array => {
+  const components: [Uint8Array, Uint8Array, Uint8Array] = [
+    componentCommitment(sim, build.components[0]),
+    componentCommitment(sim, build.components[1]),
+    componentCommitment(sim, build.components[2]),
+  ];
+  return sim.commitmentFor(
+    build.measurement,
+    sim.componentManifest(components),
+    build.randomness,
+  );
+};
+
+/** Operator registers identities and publishes both current capability sets. */
 const bootstrapRegistry = () => {
   const sim = new NightSealSimulator(operatorState());
-  for (const d of [CLEAN, VULNERABLE]) {
-    const commitment = sim.commitmentFor(d.measurement, d.randomness);
-    sim.approveFirmware(commitment, d.index);
+  for (const item of ALL_COMPONENTS) {
+    sim.approveComponent(componentCommitment(sim, item), item.index);
+  }
+  for (const build of [CLEAN_BUILD, VULNERABLE_BUILD]) {
+    sim.approveFirmware(firmwareCommitment(sim, build), build.index);
+  }
+  for (const device of [CLEAN, VULNERABLE]) {
+    sim.registerDevice(device.deviceId, sim.deviceIdentity(device.secret));
   }
   return sim;
 };
 
 describe('NightSeal registry', () => {
-  it('records the deploying operator and starts at baseline epoch 1', () => {
+  it('starts with two independent current-only capability roots', () => {
     const sim = new NightSealSimulator(operatorState());
     const ledger = sim.getLedger();
 
     expect(ledger.baselineEpoch).toEqual(1n);
     expect(ledger.operatorPk).toHaveLength(32);
+    expect(ledger.approvedSet.root()).toBeDefined();
+    expect(ledger.componentSet.root()).toBeDefined();
   });
 
-  it('bumps the baseline epoch and changes the approved-set root on approval', () => {
+  it('moves the policy epoch and only the relevant root on approval', () => {
     const sim = new NightSealSimulator(operatorState());
-    const rootBefore = sim.getLedger().approvedSet.root().field;
+    const before = sim.getLedger();
+    const firmwareRoot = before.approvedSet.root().field;
+    const componentRoot = before.componentSet.root().field;
 
-    const commitment = sim.commitmentFor(CLEAN.measurement, CLEAN.randomness);
-    const ledger = sim.approveFirmware(commitment, CLEAN.index);
+    sim.approveComponent(componentCommitment(sim, BOOT), BOOT.index);
+    const after = sim.getLedger();
 
-    expect(ledger.baselineEpoch).toEqual(2n);
-    expect(ledger.approvedSet.root().field).not.toEqual(rootBefore);
+    expect(after.baselineEpoch).toEqual(2n);
+    expect(after.componentSet.root().field).not.toEqual(componentRoot);
+    expect(after.approvedSet.root().field).toEqual(firmwareRoot);
   });
 
-  it('refuses baseline changes from anyone but the registry operator', () => {
-    const sim = bootstrapRegistry();
-    const commitment = sim.commitmentFor(bytes32('firmware:rogue'), bytes32('rand:rogue'));
+  it('refuses every policy or identity change from a non-operator', () => {
+    const sim = bootstrapRegistry().as(operatorState(ROGUE_KEY));
 
-    sim.as(createNightSealPrivateState(ROGUE_KEY, bytes32('x'), bytes32('x')));
-
-    expect(() => sim.approveFirmware(commitment, 5n)).toThrow(/not the registry operator/);
-    expect(() => sim.revokeFirmware(VULNERABLE.index)).toThrow(/not the registry operator/);
+    expect(() => sim.registerDevice(bytes32('rogue-device'), bytes32('rogue-id'))).toThrow(
+      /not the registry operator/,
+    );
+    expect(() => sim.approveComponent(bytes32('rogue-component'), 9n)).toThrow(
+      /not the registry operator/,
+    );
+    expect(() => sim.revokeComponent(TLS_VULNERABLE.index)).toThrow(/not the registry operator/);
+    expect(() => sim.approveFirmware(bytes32('rogue-firmware'), 9n)).toThrow(
+      /not the registry operator/,
+    );
+    expect(() => sim.revokeFirmware(VULNERABLE_BUILD.index)).toThrow(
+      /not the registry operator/,
+    );
   });
 });
 
-describe('attestation', () => {
-  it('marks an approved device compliant at the current baseline epoch', () => {
-    const sim = bootstrapRegistry();
-    sim.as(deviceState(CLEAN));
-
+describe('device-bound attestation', () => {
+  it('marks a registered device compliant at the current policy epoch', () => {
+    const sim = bootstrapRegistry().as(deviceState(CLEAN));
     const ledger = sim.attest(CLEAN.deviceId);
 
-    expect(ledger.deviceStatus.lookup(CLEAN.deviceId)).toEqual(1); // Status.COMPLIANT
+    expect(ledger.deviceStatus.lookup(CLEAN.deviceId)).toEqual(1);
     expect(ledger.deviceEpoch.lookup(CLEAN.deviceId)).toEqual(ledger.baselineEpoch);
   });
 
-  it('never writes the firmware measurement to the ledger', () => {
-    const sim = bootstrapRegistry();
-    sim.as(deviceState(CLEAN));
-    sim.attest(CLEAN.deviceId);
+  it("does not let Device A's valid firmware proof authorize Device B", () => {
+    const sim = bootstrapRegistry().as(deviceState(CLEAN));
 
-    const published = JSON.stringify(sim.getLedger(), (_k, v) =>
-      v instanceof Uint8Array ? toHex(v) : typeof v === 'bigint' ? v.toString() : v,
+    expect(() => sim.attest(VULNERABLE.deviceId)).toThrow(
+      /secret does not match the registered device/,
     );
-
-    expect(published).not.toContain(toHex(CLEAN.measurement));
-    expect(published).not.toContain(toHex(CLEAN.randomness));
+    expect(() => sim.attest(bytes32('device:unregistered'))).toThrow(/device is not registered/);
   });
 
-  it('cannot attest for firmware that was never approved', () => {
-    const sim = bootstrapRegistry();
-    sim.as(
-      createNightSealPrivateState(
-        bytes32('device-key'),
-        bytes32('firmware:never-approved'),
-        bytes32('rand:unknown'),
-      ),
+  it('publishes neither identity secret, firmware, components, nor openings', () => {
+    const sim = bootstrapRegistry().as(deviceState(CLEAN));
+    sim.attest(CLEAN.deviceId);
+
+    const published = JSON.stringify(sim.getLedger(), (_key, value) =>
+      value instanceof Uint8Array
+        ? toHex(value)
+        : typeof value === 'bigint'
+          ? value.toString()
+          : value,
     );
 
-    expect(() => sim.attest(bytes32('device:counterfeit'))).toThrow(
-      /not in the current approved baseline/,
-    );
+    for (const secret of [
+      CLEAN.secret,
+      CLEAN_BUILD.measurement,
+      CLEAN_BUILD.randomness,
+      ...CLEAN_BUILD.components.flatMap((c) => [c.measurement, c.randomness]),
+    ]) {
+      expect(published).not.toContain(toHex(secret));
+    }
+  });
+
+  it('cannot attest a firmware capability that was never approved', () => {
+    const sim = bootstrapRegistry();
+    const unknown = {
+      ...CLEAN_BUILD,
+      measurement: bytes32('firmware:never-approved'),
+      randomness: bytes32('firmware-randomness:unknown'),
+    };
+
+    sim.as(deviceState(CLEAN, unknown));
+    expect(() => sim.attest(CLEAN.deviceId)).toThrow(/not in the current approved baseline/);
+  });
+
+  it('cannot swap in a clean component because the manifest is firmware-bound', () => {
+    const sim = bootstrapRegistry();
+    const substituted = { ...VULNERABLE_BUILD, components: CLEAN_BUILD.components };
+
+    sim.as(deviceState(VULNERABLE, substituted));
+    expect(() => sim.attest(VULNERABLE.deviceId)).toThrow(/not in the current approved baseline/);
   });
 });
 
-describe('revocation — the CVE moment', () => {
-  it('stops the affected device from re-attesting, while an unaffected device still can', () => {
+describe('cascading private component revocation — the CVE moment', () => {
+  it('invalidates only dependent firmware without removing or identifying its firmware leaf', () => {
     const sim = bootstrapRegistry();
-
-    // Both devices attest successfully against the original baseline.
     sim.as(deviceState(CLEAN)).attest(CLEAN.deviceId);
     sim.as(deviceState(VULNERABLE)).attest(VULNERABLE.deviceId);
 
     const before = sim.getLedger();
-    expect(before.deviceEpoch.lookup(CLEAN.deviceId)).toEqual(before.baselineEpoch);
-    expect(before.deviceEpoch.lookup(VULNERABLE.deviceId)).toEqual(before.baselineEpoch);
+    const firmwareRootBefore = before.approvedSet.root();
+    const componentRootBefore = before.componentSet.root();
+    const vulnerableFirmwareLeaf = firmwareCommitment(sim, VULNERABLE_BUILD);
 
-    // A CVE lands: the operator revokes the vulnerable build.
-    sim.as(operatorState());
-    const after = sim.revokeFirmware(VULNERABLE.index);
+    const after = sim.as(operatorState()).revokeComponent(TLS_VULNERABLE.index);
 
-    // Every device is now stale: attested epoch trails the baseline.
-    expect(after.baselineEpoch).toBeGreaterThan(before.baselineEpoch);
+    expect(after.approvedSet.root()).toEqual(firmwareRootBefore);
+    expect(after.componentSet.root()).not.toEqual(componentRootBefore);
+    expect(after.approvedSet.findPathForLeaf(vulnerableFirmwareLeaf)).toBeDefined();
     expect(after.deviceEpoch.lookup(CLEAN.deviceId)).toBeLessThan(after.baselineEpoch);
     expect(after.deviceEpoch.lookup(VULNERABLE.deviceId)).toBeLessThan(after.baselineEpoch);
 
-    // The revoked device can no longer produce a passing attestation.
     sim.as(deviceState(VULNERABLE));
-    expect(() => sim.attest(VULNERABLE.deviceId)).toThrow(/not in the current approved baseline/);
+    expect(() => sim.attest(VULNERABLE.deviceId)).toThrow(/component.*current approved/i);
 
-    // The unaffected device re-attests and returns to current.
     sim.as(deviceState(CLEAN));
     const healed = sim.attest(CLEAN.deviceId);
     expect(healed.deviceEpoch.lookup(CLEAN.deviceId)).toEqual(healed.baselineEpoch);
   });
 
-  it('leaves the revoked device pinned to the stale epoch it last passed at', () => {
+  it('invalidates the previous component root, so pre-CVE proofs cannot replay', () => {
     const sim = bootstrapRegistry();
-    sim.as(deviceState(VULNERABLE)).attest(VULNERABLE.deviceId);
-    const epochWhenItPassed = sim.getLedger().deviceEpoch.lookup(VULNERABLE.deviceId);
+    const oldRoot = sim.getLedger().componentSet.root();
 
-    sim.as(operatorState()).revokeFirmware(VULNERABLE.index);
-    sim.as(deviceState(VULNERABLE));
-    expect(() => sim.attest(VULNERABLE.deviceId)).toThrow();
+    sim.as(operatorState()).revokeComponent(TLS_VULNERABLE.index);
 
-    const ledger = sim.getLedger();
-    // Its last-known-good epoch is unchanged, and it is provably behind the baseline.
-    expect(ledger.deviceEpoch.lookup(VULNERABLE.deviceId)).toEqual(epochWhenItPassed);
-    expect(ledger.baselineEpoch).toBeGreaterThan(epochWhenItPassed);
+    expect(sim.getLedger().componentSet.checkRoot(oldRoot)).toBe(false);
   });
+});
 
-  it('invalidates the old approved-set root, so a replayed proof cannot match', () => {
-    const sim = bootstrapRegistry();
+describe('direct firmware revocation remains available', () => {
+  it('preserves the original PASS → REVOKE → FAIL mechanism', () => {
+    const sim = bootstrapRegistry().as(deviceState(VULNERABLE));
+    sim.attest(VULNERABLE.deviceId);
     const rootBefore = sim.getLedger().approvedSet.root();
 
-    sim.as(operatorState()).revokeFirmware(VULNERABLE.index);
-    const rootAfter = sim.getLedger().approvedSet.root();
+    sim.as(operatorState()).revokeFirmware(VULNERABLE_BUILD.index);
 
-    // checkRoot on a plain MerkleTree accepts only the current root, so a proof
-    // carrying rootBefore is rejected by the verifier after revocation.
-    expect(rootAfter).not.toEqual(rootBefore);
     expect(sim.getLedger().approvedSet.checkRoot(rootBefore)).toBe(false);
+    sim.as(deviceState(VULNERABLE));
+    expect(() => sim.attest(VULNERABLE.deviceId)).toThrow(/not in the current approved baseline/);
   });
 });
