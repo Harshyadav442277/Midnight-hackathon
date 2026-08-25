@@ -8,7 +8,26 @@ docker start nightseal-proof-server
 npm run serve                      # http://localhost:8787
 ```
 Browser left: the dashboard. Browser right: the contract on `preview.midnightexplorer.com`.
-If a previous take left devices attested, stand up a fresh registry with `npm run cli -- deploy`.
+
+**Timing, measured on Preview — plan your edit around it.** Every action generates a real ZK
+proof and waits for the transaction, so nothing is instant:
+
+| Action | Roughly |
+|---|---|
+| `npm run serve` startup (wallet re-syncs from genesis) | ~10 min — start it well before you record |
+| Attest one device | 30–60 s |
+| Revoke a component | ~20 s |
+| Revoke + replay stale proof | ~70 s (proves, revokes, then submits) |
+
+Record continuously and cut the waits in the edit, or narrate over them — the pauses are honest
+proof generation, not lag. **Do not** start recording until the service prints
+`operator service on http://...`.
+
+**To reset between takes** (restores the revoked component so the demo runs again):
+```bash
+curl -X POST http://localhost:8787/api/approve
+```
+then attest both devices back to green. This takes a few minutes; it does not need a redeploy.
 
 No unexplained acronym before 1:00. "SBOM" and "CVE" are only allowed after the stake lands.
 
