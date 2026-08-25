@@ -14,8 +14,8 @@ NightSeal makes firmware compliance a **revocable cryptographic capability** on 
 | | |
 |---|---|
 | **Network** | Midnight **Preview** |
-| **Contract address** | `pending deployment` |
-| **Explorer** | pending deployment |
+| **Contract address** | `160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e` |
+| **Explorer** | [preview.midnightexplorer.com/contract/160c6bfc…](https://preview.midnightexplorer.com/contract/160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e) |
 <!-- DEPLOYMENT:END -->
 
 ---

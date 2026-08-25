@@ -8,8 +8,9 @@
 - [~] DUST registration — submitted via `npm run cli -- dust`; confirm `npm run cli -- balance` shows `DUST > 0` before deploying
 - [x] Proof server healthy on :6300 (Windows docker engine; reachable from WSL too — verified)
 - [x] Proving keys regenerated after tree alignment (~27 MB, all four circuits)
-- [ ] Deploy: `npm run cli -- deploy 2>&1 | tee docs/deploy-preview.log` (follow docs/DEPLOYMENT_RUNBOOK.md §2)
-- [ ] Paste contract address + explorer link into the README deployment block and docs/SUBMISSION.md
+- [x] **Deployed to Preview** — `160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e` (2026-08-25 ~16:16 IST; deployment.json committed)
+- [~] Baseline bootstrap — first attempt hit the indexer-lag wrinkle (runbook §2 note); `npm run cli -- approve` retry running in background, log `/root/nightseal/logs/approve.log`
+- [x] Contract address + explorer link in the README deployment block and docs/SUBMISSION.md
 - [ ] Live lifecycle per runbook §3; replace every `pending` row in docs/EVIDENCE.md, including the failed-attempt error text
 - [ ] Explorer screenshots (contract + root-update tx) saved to docs/
 - [ ] Record raw footage of every beat **while** doing the above — never bet on one final take

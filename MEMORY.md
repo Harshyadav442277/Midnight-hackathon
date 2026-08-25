@@ -30,19 +30,25 @@
   **Windows** docker engine — the `docker` CLI does not exist inside WSL (Desktop WSL
   integration off; not needed). If it dies: from Windows, `docker start nightseal-proof-server`.
   Docker Desktop itself must be running (it was started this session).
-- **A background `npm run serve` deploy attempt was started ~16:20 IST this session**, logging to
-  `/root/nightseal/logs/serve.log` (gitignored, survives WSL restarts). It syncs the wallet, waits
-  for DUST to accrue (up to 20 min), deploys if `deployment.json` is absent, publishes the full
-  baseline (3 device registrations + 4 components + 2 builds), then serves the dashboard on :8787.
-  On taking over: `wsl.exe -d Ubuntu bash -lc 'tail -20 /root/nightseal/logs/serve.log'` and check
-  for `/root/nightseal/deployment.json`. If it deployed → continue runbook §3–4. If it died
-  mid-bootstrap → re-run `npm run serve` (reuses deployment.json) and/or `npm run cli -- approve`
-  to re-publish the baseline (idempotent leaf writes; extra epoch bumps are harmless pre-demo).
-  If DUST never accrued → wait and retry; the registration tx above is confirmed submitted.
+- **DEPLOYED to Preview at ~16:16 IST**:
+  contract `160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e`
+  (`deployment.json` committed; README/SUBMISSION/EVIDENCE carry the explorer link).
+  DUST accrued fine (~0.12 DUST at first synced check).
+- **The same-process bootstrap FAILED ~2s after deploy** with `Unexpected error executing scoped
+  transaction: expected instance of StateValue` — the indexer had not yet indexed the fresh
+  contract when `findDeployedContract` re-queried it (see the runbook §2 wrinkle note). Deploy log
+  preserved at `/root/nightseal/logs/serve-deploy-attempt1.log`.
+- **`npm run cli -- approve` was started in the background (~16:20 IST)** to publish the baseline
+  (3 device registrations + 4 components + 2 builds); log: `/root/nightseal/logs/approve.log`.
+  On takeover: check that log for nine `tx` hashes → copy them into docs/EVIDENCE.md's bootstrap
+  row → continue runbook §3 (lifecycle + footage). If it failed, re-run `npm run cli -- approve`
+  (idempotent). The dashboard afterwards: `npm run serve` (will reuse deployment.json and skip
+  deploying).
 
 ## Immediate continuation (exact order — TASKS.md Phase D)
-1. `npm run cli -- balance` until `DUST > 0` (registration already submitted — do NOT redo the faucet).
-2. `npm run cli -- deploy 2>&1 | tee docs/deploy-preview.log` → address into README + docs/SUBMISSION.md.
+1. Confirm the background `approve` finished: nine tx hashes in `/root/nightseal/logs/approve.log`
+   → copy into docs/EVIDENCE.md (bootstrap row). Re-run `npm run cli -- approve` if it failed.
+2. `npm run serve` (reuses deployment.json) → dashboard on :8787 next to the explorer.
 3. Lifecycle per runbook §3: attest sensor-gateway-02 → revoke-component tls-3.0-cve →
    attest sensor-gateway-02 (green) → attest router-fleet-07 (fails locally, no tx).
    Fill docs/EVIDENCE.md; screenshot explorer; record raw footage throughout.

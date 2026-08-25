@@ -8,9 +8,11 @@
 | Funding address | `mn_addr_preview14066huxp7t3rjx85pkptfgcntcny8ul0tjx8q0dl4d838gnwu2psw8jw44` |
 | Faucet transaction | `00388f16d712bd60fa0984f95afd76a803f938d59c61000a66194591fa52dbfc35` (confirmed 2026-08-25 ~15:30 IST) |
 | Wallet balance | `NIGHT: 5000000000` (5,000 tNIGHT base units), `DUST: 0` at funding time |
-| DUST registration | submitted 2026-08-25 evening — tx id in MEMORY.md; recheck with `npm run cli -- balance` |
+| DUST registration | `00f6f659fcb0560232f644416e0e48ad8ab328b570340fb642dbef04126d32ed3d` (submitted 2026-08-25 16:04 IST; recheck with `npm run cli -- balance`) |
 | Proving assets | regenerated 2026-08-25 (~27 MB keys for all four circuits) |
-| Contract | pending DUST accrual + `npm run cli -- deploy` |
+| DUST accrued | `120739534999999999` base units at first post-registration sync (2026-08-25 ~16:15 IST) |
+| **Contract (Preview)** | `160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e` — deployed 2026-08-25 ~16:16 IST |
+| **Explorer** | https://preview.midnightexplorer.com/contract/160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e |
 
 ## Live lifecycle (fill immediately after funding)
 
