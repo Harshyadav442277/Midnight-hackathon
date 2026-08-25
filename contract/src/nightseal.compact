@@ -1,0 +1,101 @@
+// NightSeal — privacy-preserving firmware attestation registry.
+//
+// A device proves in zero knowledge that its firmware measurement is part of the
+// registry operator's current approved baseline, without revealing the measurement.
+// The public ledger carries only: opaque commitments, a compliance status per device,
+// and the baseline epoch each device last attested against.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export enum Status {
+  UNKNOWN,
+  COMPLIANT
+}
+
+// Leaves are COMMITMENTS to approved firmware measurements, never the measurements
+// themselves: Merkle leaves are public ledger state.
+export ledger approvedSet: MerkleTree<10, Bytes<32>>;
+
+// Bumped on every baseline change (approval or revocation). A device is only current
+// if it attested against the present epoch.
+export ledger baselineEpoch: Counter;
+
+// Public compliance state, keyed by device id.
+export ledger deviceStatus: Map<Bytes<32>, Status>;
+export ledger deviceEpoch: Map<Bytes<32>, Uint<64>>;
+
+// The registry operator, fixed at deployment.
+export ledger operatorPk: Bytes<32>;
+
+// --- private inputs -------------------------------------------------------
+
+// The caller's secret key. Used to authenticate the operator.
+witness localSecretKey(): Bytes<32>;
+
+// The device's firmware measurement and the blinding factor the operator issued
+// with it. Neither ever reaches the ledger.
+witness firmwareMeasurement(): Bytes<32>;
+witness firmwareRandomness(): Bytes<32>;
+
+// The Merkle path to this device's commitment, resolved from public ledger state
+// by the TypeScript witness (findPathForLeaf is not callable inside a circuit).
+witness firmwarePath(commitment: Bytes<32>): MerkleTreePath<10, Bytes<32>>;
+
+// --- helpers --------------------------------------------------------------
+
+export circuit operatorIdentity(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "nightseal:operator:"), sk]);
+}
+
+// Domain-separated commitment to a firmware measurement.
+export circuit firmwareCommitment(measurement: Bytes<32>, randomness: Bytes<32>): Bytes<32> {
+  return persistentCommit<Vector<2, Bytes<32>>>(
+    [pad(32, "nightseal:firmware:"), measurement],
+    randomness
+  );
+}
+
+constructor() {
+  operatorPk = disclose(operatorIdentity(localSecretKey()));
+  baselineEpoch.increment(1);
+}
+
+// --- operator circuits ----------------------------------------------------
+
+// Add an approved firmware build to the baseline, as an opaque commitment.
+export circuit approveFirmware(commitment: Bytes<32>, index: Uint<64>): [] {
+  assert(operatorPk == operatorIdentity(localSecretKey()), "not the registry operator");
+  approvedSet.insertIndex(disclose(commitment), disclose(index));
+  baselineEpoch.increment(1);
+}
+
+// Revoke a firmware build — the CVE moment. insertIndexDefault overwrites the leaf
+// with the default value, which is how the standard library emulates removal. The
+// root changes, so every proof built against the old baseline stops verifying.
+export circuit revokeFirmware(index: Uint<64>): [] {
+  assert(operatorPk == operatorIdentity(localSecretKey()), "not the registry operator");
+  approvedSet.insertIndexDefault(disclose(index));
+  baselineEpoch.increment(1);
+}
+
+// --- device circuit -------------------------------------------------------
+
+// Prove membership of this device's firmware in the CURRENT approved baseline.
+//
+// approvedSet is a plain MerkleTree, so checkRoot accepts only the current root.
+// That is deliberate: HistoricMerkleTree would accept any past root and a revoked
+// device could keep attesting forever.
+export circuit attest(deviceId: Bytes<32>): [] {
+  const commitment = firmwareCommitment(firmwareMeasurement(), firmwareRandomness());
+  const path = firmwarePath(commitment);
+
+  assert(
+    approvedSet.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))),
+    "firmware is not in the current approved baseline"
+  );
+
+  deviceStatus.insert(disclose(deviceId), Status.COMPLIANT);
+  deviceEpoch.insert(disclose(deviceId), baselineEpoch as Field as Uint<64>);
+}
