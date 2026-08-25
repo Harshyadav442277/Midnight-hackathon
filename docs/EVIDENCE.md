@@ -76,7 +76,7 @@ device lost the ability to prove compliance, and the clean one did not.
 
 - `npm run compact` — full proving/verifying assets generated successfully.
 - `npm run typecheck` — contract, CLI, and UI clean.
-- `npm test` — 11/11 lifecycle and adversarial tests pass.
+- `npm test` — 13/13 lifecycle and adversarial tests pass.
 - `npm run build --workspace ui` — production build succeeds.
 - In-app browser QA — firmware root remained fixed across component revocation; component
   root moved; clean device recovered; secretly dependent device became NON-COMPLIANT;

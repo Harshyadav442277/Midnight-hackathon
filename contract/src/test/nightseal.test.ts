@@ -272,6 +272,51 @@ describe('cascading private component revocation — the CVE moment', () => {
   });
 });
 
+describe('operation-hiding policy updates', () => {
+  /**
+   * Approval and revocation are literally the same circuit call: one 32-byte opaque value
+   * written at an index. Revocation just writes a value nobody knows an opening for. An
+   * observer sees a leaf update either way — never which kind it was.
+   */
+  it('gives an approval and a revocation the same public shape', () => {
+    const index = 5n;
+    const genuine = bootstrapRegistry();
+    const tombstoned = bootstrapRegistry();
+
+    const capability = componentCommitment(genuine, component('newly-approved', index));
+    const tombstone = bytes32('tombstone-with-no-known-opening');
+
+    // Same simulator method for both — it is the same circuit underneath.
+    genuine.approveComponent(capability, index);
+    tombstoned.approveComponent(tombstone, index);
+
+    const a = genuine.getLedger();
+    const t = tombstoned.getLedger();
+
+    // Identical epoch movement, and a well-formed leaf sits at the index in both cases.
+    expect(t.baselineEpoch).toEqual(a.baselineEpoch);
+    expect(a.componentSet.findPathForLeaf(capability)).toBeDefined();
+    expect(t.componentSet.findPathForLeaf(tombstone)).toBeDefined();
+
+    // The roots differ — that much is public and expected — but nothing in published state
+    // labels either write as an approval or a removal.
+    const published = JSON.stringify(t, (_key, value) =>
+      value instanceof Uint8Array ? toHex(value) : typeof value === 'bigint' ? value.toString() : value,
+    );
+    expect(published).not.toMatch(/revoke|tombstone|removed|disabled/i);
+  });
+
+  it('leaves a revoked component unopenable, so no proof can use it', () => {
+    const sim = bootstrapRegistry();
+    sim.revokeComponent(TLS_VULNERABLE.index);
+
+    // The old capability commitment is gone from the tree; only the opaque tombstone remains.
+    expect(
+      sim.getLedger().componentSet.findPathForLeaf(componentCommitment(sim, TLS_VULNERABLE)),
+    ).toBeUndefined();
+  });
+});
+
 describe('direct firmware revocation remains available', () => {
   it('preserves the original PASS → REVOKE → FAIL mechanism', () => {
     const sim = bootstrapRegistry().as(deviceState(VULNERABLE));

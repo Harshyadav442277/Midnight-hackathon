@@ -27,7 +27,7 @@
 - Compile contract: `npm run compact` — fast iteration: `npm run compact:fast --workspace contract` (`--skip-zk`, ~0.3s)
   Full compile regenerates `contract/src/managed/nightseal/keys/` (~27 MB, gitignored) — required before deploy/attest.
 - Typecheck everything: `npm run typecheck`
-- Test: `npm test` (11 lifecycle/adversarial tests)
+- Test: `npm test` (13 lifecycle/adversarial tests)
 - Build all: `npm run build`
 - Proof server (**Windows**): `docker start nightseal-proof-server` — container exists; health check is `GET /` on :6300, not `/health`
 - CLI: `npm run cli -- <address|balance|dust|deploy|approve|revoke-component <component>|revoke <build>|attest <device>|replay <device> <component>|status>`

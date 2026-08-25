@@ -117,7 +117,7 @@ Every CLI command re-syncs the wallet from genesis (a few minutes). For a multi-
 npm test
 ```
 
-Eleven tests cover the lifecycle and its adversarial edges: cross-device impersonation, component substitution, component-root replay, direct firmware revocation, and serialization checks proving device, firmware, component, and opening secrets never enter published state.
+Thirteen tests cover the lifecycle and its adversarial edges: cross-device impersonation, component substitution, component-root replay, direct firmware revocation, the indistinguishability of an approval from a revocation, and serialization checks proving device, firmware, component, and opening secrets never enter published state.
 
 ### Attack map
 
@@ -128,6 +128,7 @@ Eleven tests cover the lifecycle and its adversarial edges: cross-device imperso
 | Pre-CVE proof/root is replayed | Plain `MerkleTree.checkRoot` accepts only the current root. | `invalidates the previous component root` |
 | Rogue operator changes policy | Every update proves knowledge of the registered operator secret. | `refuses every policy or identity change from a non-operator` |
 | Observer reads secrets from ledger state | Only domain-separated commitments and proof results are published. | `publishes neither identity secret, firmware, components, nor openings` |
+| Observer watches for revocations to spot a CVE | Approval, revocation, and rotation are one circuit writing one opaque value. | `gives an approval and a revocation the same public shape` |
 
 Two devices on the same firmware cannot be clustered by an on-chain firmware value: device records contain only identity commitments, status, and epoch. Correlated failures after a policy update can still leak a likely shared dependency, which is disclosed below.
 

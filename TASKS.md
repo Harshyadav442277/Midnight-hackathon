@@ -29,7 +29,7 @@
 - [x] Device card distinguishes a consensus rejection from a local proof-construction failure
 - [x] Two blocking infra bugs found and fixed: duplicate WASM runtime; private-state scoping
 - [x] Debloat: unused deps and dead code removed; error causes surfaced via `cli/src/errors.ts`
-- [x] 11/11 tests, typecheck clean, production build green
+- [x] 13/13 tests, typecheck clean, production build green
 
 ## Deferred (post-hackathon — rationale in docs/improvementsByClaude.md)
 - Split-authority cascade (separate regulator key for the component tree)
