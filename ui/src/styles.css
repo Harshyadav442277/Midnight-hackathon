@@ -181,6 +181,11 @@ button.danger:hover:not(:disabled) { background: rgba(239, 68, 68, 0.18); border
   background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); color: #fecaca;
 }
 .banner .hint { color: var(--ink-dim); }
+.banner.note {
+  background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.3);
+  color: var(--ink-dim); font-size: 13.5px;
+}
+.banner.note strong { color: var(--good); }
 .loading { color: var(--ink-faint); }
 
 footer {

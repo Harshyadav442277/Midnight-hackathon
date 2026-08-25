@@ -41,10 +41,17 @@ type Props = {
   device: DeviceView;
   baselineEpoch: string;
   busy: boolean;
+  readOnly: boolean;
   onAttest: () => void;
 };
 
-export const DeviceCard = ({ device, baselineEpoch, busy, onAttest }: Props): React.ReactElement => {
+export const DeviceCard = ({
+  device,
+  baselineEpoch,
+  busy,
+  readOnly,
+  onAttest,
+}: Props): React.ReactElement => {
   const { pill, blurb, tone } = presentationFor(device, baselineEpoch);
   const drift =
     device.epoch === null
@@ -84,9 +91,11 @@ export const DeviceCard = ({ device, baselineEpoch, busy, onAttest }: Props): Re
         </p>
       )}
 
-      <button type="button" onClick={onAttest} disabled={busy}>
-        {busy ? 'Generating proof…' : 'Attest now'}
-      </button>
+      {!readOnly && (
+        <button type="button" onClick={onAttest} disabled={busy}>
+          {busy ? 'Generating proof…' : 'Attest now'}
+        </button>
+      )}
     </article>
   );
 };

@@ -115,6 +115,14 @@ export const App = (): React.ReactElement => {
         </div>
       </section>
 
+      {state?.readOnly && (
+        <div className="banner note">
+          <strong>Auditor view.</strong> This page holds no key and can only read. Everything
+          below came from the public chain — which is the entire point. Approving and revoking
+          firmware needs the operator's key and runs on their own machine.
+        </div>
+      )}
+
       <main className="fleet">
         {(state?.devices ?? []).map((device) => (
           <DeviceCard
@@ -122,13 +130,14 @@ export const App = (): React.ReactElement => {
             device={device}
             baselineEpoch={state?.baselineEpoch ?? '0'}
             busy={busy === `Attest ${device.label}`}
+            readOnly={state?.readOnly ?? false}
             onAttest={() => act(`Attest ${device.label}`, `/api/attest/${device.id}`)}
           />
         ))}
         {!state && !error && <p className="loading">Reading public ledger state…</p>}
       </main>
 
-      {state && (
+      {state && !state.readOnly && (
         <OperatorPanel
           state={state}
           busy={busy}

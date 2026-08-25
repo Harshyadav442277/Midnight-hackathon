@@ -20,7 +20,8 @@ import { buildProviders, type NightSealProviders } from './providers.ts';
 import {
   approveAllBuilds,
   attestDevice,
-  loadDeployment,
+  deployRegistry,
+  findDeployment,
   readPublicState,
   revokeBuild,
 } from './registry.ts';
@@ -146,17 +147,61 @@ const handle = async (
   return { status: 404, body: { error: `No route for ${method} ${path}` } };
 };
 
+/**
+ * Make sure the wallet can actually pay fees.
+ *
+ * Faucet tokens arrive as unshielded NIGHT, which cannot pay fees on its own — it has
+ * to be registered for DUST generation, and DUST then accrues over time.
+ */
+const ensureDust = async (wallet: NightSealWallet): Promise<void> => {
+  let { night, dust } = await wallet.balances();
+  logger.info(`Balances — NIGHT ${night}, DUST ${dust}`);
+  if (dust > 0n) return;
+
+  if (night === 0n) {
+    throw new Error(
+      `No NIGHT and no DUST. Fund this address at ${PREVIEW.faucet} then restart:\n  ` +
+        (await wallet.unshieldedAddress()),
+    );
+  }
+
+  await wallet.generateDust();
+  logger.info('Waiting for DUST to accrue (this can take a few minutes)...');
+  for (let attempt = 0; attempt < 120 && dust === 0n; attempt += 1) {
+    await new Promise((r) => setTimeout(r, 10_000));
+    ({ night, dust } = await wallet.balances());
+    if (attempt % 6 === 0) logger.info(`  DUST ${dust}`);
+  }
+  if (dust === 0n) throw new Error('DUST never accrued — cannot pay transaction fees.');
+  logger.info(`DUST available: ${dust}`);
+};
+
 const main = async (): Promise<void> => {
   loadEnv();
   setNetworkId(PREVIEW.walletNetworkId);
 
-  const { contractAddress } = loadDeployment();
   const seed = seedFor('operator');
   const wallet = await NightSealWallet.build(logger, PREVIEW, seed);
   await wallet.start();
   await wallet.waitForSync();
+  await ensureDust(wallet);
 
-  const ctx: Ctx = { providers: buildProviders(wallet), seed, contractAddress };
+  const providers = buildProviders(wallet);
+
+  // Syncing a fresh wallet takes a long time, so one process does everything:
+  // deploy if needed, publish the baseline, then serve the dashboard.
+  let deployment = findDeployment();
+  if (!deployment) {
+    const deployed = await deployRegistry(providers, seed);
+    const contractAddress = deployed.deployTxData.public.contractAddress;
+    await approveAllBuilds(providers, contractAddress, seed);
+    deployment = { contractAddress, network: 'preview', deployedAt: new Date().toISOString() };
+  } else {
+    logger.info(`Using existing registry ${deployment.contractAddress}`);
+  }
+  const { contractAddress } = deployment;
+
+  const ctx: Ctx = { providers, seed, contractAddress };
 
   createServer((req, res) => {
     const path = (req.url ?? '/').split('?')[0] ?? '/';

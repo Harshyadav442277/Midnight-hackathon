@@ -26,11 +26,15 @@ export const saveDeployment = (d: Deployment): void =>
   writeFileSync(DEPLOYMENT_PATH, `${JSON.stringify(d, null, 2)}\n`, 'utf8');
 
 export const loadDeployment = (): Deployment => {
-  if (!existsSync(DEPLOYMENT_PATH)) {
-    throw new Error('No deployment.json found — run:  npm start -- deploy');
-  }
-  return JSON.parse(readFileSync(DEPLOYMENT_PATH, 'utf8')) as Deployment;
+  const found = findDeployment();
+  if (!found) throw new Error('No deployment.json found — run:  npm start -- deploy');
+  return found;
 };
+
+export const findDeployment = (): Deployment | null =>
+  existsSync(DEPLOYMENT_PATH)
+    ? (JSON.parse(readFileSync(DEPLOYMENT_PATH, 'utf8')) as Deployment)
+    : null;
 
 /** The operator's identity key, derived deterministically from its wallet seed. */
 export const operatorSecretKey = (seed: string): Uint8Array => digest(`nightseal:operator:${seed}`);

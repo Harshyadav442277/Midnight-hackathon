@@ -155,31 +155,68 @@ export class NightSealWallet implements MidnightProvider, WalletProvider {
     return txId;
   }
 
-  /** Block until the wallet has synced with the indexer. */
-  async waitForSync(): Promise<void> {
-    const complete = (p: unknown): boolean =>
-      !!p &&
-      typeof p === 'object' &&
-      typeof (p as { isStrictlyComplete?: unknown }).isStrictlyComplete === 'function' &&
-      (p as { isStrictlyComplete: () => boolean }).isStrictlyComplete();
+  /**
+   * Block until the wallet has caught up with the indexer.
+   *
+   * `maxGap` tolerates the wallet trailing the chain tip by a few blocks. Insisting on
+   * a strictly-equal index can wait forever on a live network, because new blocks keep
+   * arriving while the scan runs.
+   */
+  async waitForSync(maxGap = 3n): Promise<void> {
+    type Progress = {
+      appliedIndex: bigint;
+      highestIndex: bigint;
+      highestRelevantIndex: bigint;
+      isConnected: boolean;
+      isStrictlyComplete(): boolean;
+      isCompleteWithin(maxGap?: bigint): boolean;
+    };
 
-    this.logger.info('Syncing wallet with the indexer (first sync can take a few minutes)...');
+    const done = (p: Progress): boolean => p.isStrictlyComplete() || p.isCompleteWithin(maxGap);
+    const show = (p: Progress): string =>
+      `${p.appliedIndex}/${p.highestIndex}${p.isConnected ? '' : ' [disconnected]'}`;
+
+    const parts = (s: {
+      shielded: { state: { progress: Progress } };
+      unshielded: { progress: Progress };
+      dust: { state: { progress: Progress } };
+    }) => [s.shielded.state.progress, s.unshielded.progress, s.dust.state.progress] as const;
+
+    this.logger.info('Syncing wallet with the indexer (first sync can take several minutes)...');
     await Rx.firstValueFrom(
       this.wallet.state().pipe(
-        Rx.throttleTime(3_000),
-        Rx.tap((s) =>
-          this.logger.debug(
-            `sync: shielded=${complete(s.shielded.state.progress)} unshielded=${complete(
-              s.unshielded.progress,
-            )} dust=${complete(s.dust.state.progress)}`,
-          ),
-        ),
-        Rx.filter(
-          (s) =>
-            complete(s.shielded.state.progress) &&
-            complete(s.unshielded.progress) &&
-            complete(s.dust.state.progress),
-        ),
+        Rx.throttleTime(5_000),
+        Rx.tap((s) => {
+          const [shielded, unshielded, dust] = parts(s as never);
+          this.logger.info(
+            `sync — shielded ${show(shielded)} · unshielded ${show(unshielded)} · dust ${show(dust)}`,
+          );
+          if (process.env.SYNC_DEBUG) {
+            const dump = (name: string, p: Progress): string => {
+              const raw = JSON.stringify(
+                p,
+                (_k, v) => (typeof v === 'bigint' ? `${v}n` : v),
+              );
+              let strict = 'n/a';
+              let within = 'n/a';
+              try {
+                strict = String(p.isStrictlyComplete());
+              } catch (e) {
+                strict = `threw: ${(e as Error).message}`;
+              }
+              try {
+                within = String(p.isCompleteWithin(maxGap));
+              } catch (e) {
+                within = `threw: ${(e as Error).message}`;
+              }
+              return `${name}: strict=${strict} within=${within} keys=${Object.keys(p ?? {}).join(',')} raw=${raw}`;
+            };
+            this.logger.info(dump('shielded', shielded));
+            this.logger.info(dump('unshielded', unshielded));
+            this.logger.info(dump('dust', dust));
+          }
+        }),
+        Rx.filter((s) => parts(s as never).every(done)),
       ),
     );
     this.logger.info('Wallet synced.');

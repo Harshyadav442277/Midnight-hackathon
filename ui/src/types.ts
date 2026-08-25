@@ -22,6 +22,8 @@ export type BuildView = {
 };
 
 export type RegistryState = {
+  /** True on the public auditor deployment, which holds no operator key. */
+  readOnly?: boolean;
   baselineEpoch: string;
   approvedRoot: string;
   contractAddress: string;
