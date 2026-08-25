@@ -1,7 +1,6 @@
 # NightSeal — Devpost submission copy
 
-This is paste-ready copy. Replace bracketed deployment fields only after the live Preview
-lifecycle is captured.
+Paste-ready. Every link below is live and verified; only the demo-video URL is still missing.
 
 ## Project title
 
@@ -121,5 +120,7 @@ infrastructure.
 - [x] Root-update transaction link resolves publicly.
 - [ ] Video shows firmware root unchanged while component root changes.
 - [ ] Video shows clean recovery and secretly dependent failure.
-- [ ] README contains contract, transaction, and video links.
-- [ ] Public repository contains no `.env`, wallet seed, or private openings.
+- [x] README contains contract, dashboard, and evidence links (video link still to add).
+- [x] Public repository contains no `.env`, wallet seed, or private openings — verified: no
+      `.env*` tracked, no 64-hex secrets in source, `.gitignore` covers `.env*`, `logs/`, `.claude/`.
+- [x] Every explorer link verified to resolve (paths are `/contracts/` and `/transactions/`).
