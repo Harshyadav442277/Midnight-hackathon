@@ -275,6 +275,7 @@ export const buildHeldAttestation = async (
   const build = buildForDevice(device);
   const wallet = providers.walletProvider;
   let capture!: (tx: UnboundTransaction) => void;
+  let captured = false;
   const held = new Promise<UnboundTransaction>((resolve) => {
     capture = resolve;
   });
@@ -288,6 +289,7 @@ export const buildHeldAttestation = async (
       getCoinPublicKey: () => wallet.getCoinPublicKey(),
       getEncryptionPublicKey: () => wallet.getEncryptionPublicKey(),
       balanceTx: async (tx: UnboundTransaction): Promise<never> => {
+        captured = true;
         capture(tx);
         throw new Error('NightSeal: attestation held for replay');
       },
@@ -301,8 +303,20 @@ export const buildHeldAttestation = async (
   );
 
   logger.info(`${device.label} is proving an attestation against the CURRENT baseline...`);
-  void contract.callTx.attest(deviceKey(device)).catch(() => undefined);
-  return held;
+
+  // The interceptor throws once it has the transaction, so this call is expected to reject.
+  // But it also rejects when proving genuinely fails — e.g. the component is already revoked
+  // — and then nothing would ever capture, leaving `held` pending forever and hanging the
+  // caller's request queue. Racing the two turns that into a clean error.
+  const attempt = contract.callTx.attest(deviceKey(device)).then(
+    () => Promise.reject(new Error('attestation was submitted instead of held')),
+    (err: unknown) =>
+      captured
+        ? held // the interceptor's own throw, after it already handed us the transaction
+        : Promise.reject(new Error(`could not build a proof to replay: ${explain(err)}`)),
+  );
+
+  return Promise.race([held, attempt]);
 };
 
 /**
