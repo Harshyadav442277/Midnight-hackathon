@@ -55,6 +55,17 @@ export ledger operatorPk:    Bytes<32>;                  // registry operator id
    Stronger and more honest than a bare green→red flip: after the CVE the clean device goes amber→green while the revoked one goes amber→red, and the difference is produced by cryptography, not by UI state.
 6. **A failed attestation is a rejected transaction**, not a ledger write — recording "this device failed" on-chain would require proving non-membership. The rejection is the evidence; the UI surfaces the verifier error. Recorded in GAPS.md.
 7. Verify all Compact/tooling facts against live docs before writing code — see [docs/TOOLCHAIN_FACTS.md](docs/TOOLCHAIN_FACTS.md).
+8. **The web app uses a headless operator service, not a browser wallet extension.**
+   - The **auditor dashboard is read-only and needs no wallet at all** — it renders public
+     ledger state fetched from the indexer. That is the product claim made literal: anyone
+     can audit compliance with nothing but a URL, and still sees no firmware data.
+   - Privileged actions (approve / revoke / attest) POST to a small local Node service that
+     signs with the headless wallet — the same code path the CLI uses. A registry operator
+     realistically runs a service, not a browser extension.
+   - *Rejected:* Lace + `dapp-connector-api` in the browser. It would add an install-and-fund
+     step for every judge, and Lace reportedly does not implement `getProvingProvider()`, so a
+     local proof server would be required anyway. The reliability cost is not worth it with a
+     fixed deadline. Recorded as a limitation in GAPS.md.
 
 ## Decision log
 - 2026-08-25: repo on GitHub `Harshyadav442277/Midnight-hackathon`.
