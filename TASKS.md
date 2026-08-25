@@ -9,7 +9,10 @@
 - [ ] **Submit on Devpost** — form + video link + public repo, well before Aug 27 07:00 IST.
       [docs/SUBMISSION.md](docs/SUBMISSION.md) is paste-ready with contract, dashboard, and
       transaction links already filled in.
-- [ ] Optional: explorer screenshots into `docs/` (the links already resolve publicly).
+- [ ] Optional: explorer screenshots into `docs/`. Not required — every explorer link resolves
+      publicly and the contract page shows address, deployment tx, block, and ledger state, so
+      the evidence stands without images. Capture them from your own browser if you want them
+      in the README.
 
 ## Done — deployment and evidence
 - [x] Faucet funding, DUST registration, proof server, proving keys

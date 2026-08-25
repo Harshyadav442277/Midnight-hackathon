@@ -12,6 +12,8 @@
 | Proving assets | regenerated 2026-08-25 (~27 MB keys for all four circuits) |
 | DUST accrued | `120739534999999999` base units at first post-registration sync (2026-08-25 ~16:15 IST) |
 | **Contract (Preview)** | `160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e` — deployed 2026-08-25 ~16:16 IST |
+| **Deployment transaction** | `0xe76877a2b543ccdb50c35416b605c26f4be4b67847b0602ae72795a548519a59` |
+| **Block** | #574,524 — Aug 25, 2026, 1:16 PM UTC (as shown by the explorer) |
 | **Explorer** | https://preview.midnightexplorer.com/contracts/160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e |
 
 ## Bootstrap — all nine transactions confirmed on Preview (2026-08-25 11:18–11:22 UTC)
