@@ -1,6 +1,6 @@
 # MEMORY — session continuity
 
-## Current status (2026-08-25, ~15:10 IST)
+## Current status (2026-08-25, ~15:40 IST)
 - Deadline: 2026-08-27 07:00 IST. Student eligibility confirmed.
 - Canonical build checkout: WSL Ubuntu at `/root/nightseal`; Windows workspace is synced.
 - Toolchain green: Compact CLI 0.5.2 / compiler 0.31.1, proof server 8.1.0,
@@ -18,21 +18,32 @@
   selective red failure, and no console errors. Vite dependencies were aligned to 8.2.2.
 - `docs/SUBMISSION.md` and `docs/DEPLOYMENT_RUNBOOK.md` are ready so the funded
   deploy, evidence capture, recording, and Devpost handoff can proceed without redesign.
+- Upgrade commits in the Windows workspace: `ac8bbdb` (cryptographic capability
+  upgrade) and `5e6d286` (deployment/submission handoff). The user-owned untracked
+  `docs/improvementsByClaude.md` was preserved unchanged.
 
-## Blocked on the only human step
-- Preview wallet fully resynced and rechecked at 15:05 IST; it still reports
-  `NIGHT: 0`, `DUST: 0`.
-- Fund this unshielded address through the CAPTCHA faucet:
-  `mn_addr_preview14066huxp7t3rjx85pkptfgcntcny8ul0tjx8q0dl4d838gnwu2psw8jw44`
-- Faucet: https://midnight-tmnight-preview.nethermind.dev/
-- Then run `npm run cli -- dust`, wait for DUST, and deploy.
+## Funding received; DUST and deployment still pending
+- Faucet transaction submitted and confirmed by the fully synchronized wallet:
+  `00388f16d712bd60fa0984f95afd76a803f938d59c61000a66194591fa52dbfc35`.
+- Wallet balance at 15:36 IST: `NIGHT: 5000000000` (5,000 tNIGHT base units),
+  `DUST: 0`.
+- DUST registration was **not** submitted before handoff. No deploy or lifecycle
+  transaction has been attempted.
+- A final `docker start nightseal-proof-server` attempt failed because the `docker`
+  command is currently unavailable inside WSL. Check `curl http://localhost:6300/`
+  first; if unavailable, open Docker Desktop and enable Ubuntu WSL integration, then
+  start/recreate the proof-server 8.1.0 container.
+- No wallet sync, CLI, or other process was left running at handoff.
 
-## Immediate continuation after funding
-1. `npm run cli -- dust` then `npm run cli -- balance` until DUST > 0.
-2. `npm run cli -- deploy`; paste address/explorer link into README.
-3. Run attest → `revoke-component tls-3.0-cve` → clean attest → affected attest;
+## Immediate continuation
+1. From `/root/nightseal`, verify the proof server with `curl http://localhost:6300/`;
+   restore Docker Desktop/WSL integration if that fails.
+2. Run `npm run cli -- dust` (the ephemeral wallet performs a full Preview rescan),
+   save the DUST-registration tx id, then run `npm run cli -- balance` until DUST > 0.
+3. Run `npm run cli -- deploy`; paste the address/explorer link into README.
+4. Run attest → `revoke-component tls-3.0-cve` → clean attest → affected attest;
    record hashes/errors in `docs/EVIDENCE.md` and capture raw footage.
-4. Record the revised ~3-minute demo, deploy the read-only dashboard, submit Devpost.
+5. Record the revised ~3-minute demo, deploy the read-only dashboard, submit Devpost.
 
 ## Gotchas
 - A failed post-revocation attest normally stops during local witness/path resolution;
