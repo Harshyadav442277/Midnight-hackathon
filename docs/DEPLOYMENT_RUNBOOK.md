@@ -32,12 +32,15 @@ and prints the explorer URL. Copy the contract address and every transaction has
 `docs/EVIDENCE.md`.
 
 > **Known wrinkles (both hit on 2026-08-25):**
-> 1. The deploy transaction confirms before the indexer serves the new contract state, so the
->    same-process bootstrap can die seconds later with `Unexpected error executing scoped
->    transaction: expected instance of StateValue`. The deployment itself is fine —
->    `deployment.json` is written. Wait a minute, then publish the baseline with
->    `npm run cli -- approve` (idempotent; safe to re-run — registrations and leaf writes
->    overwrite themselves, and extra epoch bumps before the demo are harmless).
+> 1. `Unexpected error executing scoped transaction: expected instance of StateValue` on every
+>    `callTx` — TWO copies of `@midnight-ntwrk/onchain-runtime-v3` were installed (compact-runtime
+>    accepts `^3.0.0` → npm hoisted 3.1.0; midnight-js-protocol pins exactly 3.0.0 → nested copy),
+>    so two WASM instances defined two distinct `StateValue` classes and `instanceof` failed at the
+>    circuit-execution boundary. Deploys and simulator tests don't cross that boundary, which is
+>    why only live `callTx` broke. Fixed with the root `overrides` pin to `3.0.0`. If it ever
+>    reappears, run `npm ls @midnight-ntwrk/onchain-runtime-v3` and make sure exactly one version
+>    resolves. A failed bootstrap is recoverable with `npm run cli -- approve` (idempotent; safe to
+>    re-run — leaf writes overwrite themselves and extra epoch bumps before the demo are harmless).
 > 2. `Contract address not set. Call setContractAddress() before accessing private state.` —
 >    the level private-state provider scopes state by contract address; fixed in
 >    `joinRegistry` (it now calls `setContractAddress` before the role-switching state write).
