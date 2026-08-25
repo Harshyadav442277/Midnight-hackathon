@@ -100,16 +100,15 @@ git clone https://github.com/Harshyadav442277/Midnight-hackathon.git nightseal &
 npm install && npm run compact && npm run build
 docker run -d -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v
 npm run cli -- address        # fund this address at the Preview faucet, then: npm run cli -- dust
+npm run cli -- deploy         # stand up your own registry (rewrites deployment.json)
 npm run serve                 # dashboard + operator service on http://localhost:8787
 ```
 
-**Two ways to run it, and they answer different questions.**
+**You may not need any of that.** [nightseal.vercel.app](https://nightseal.vercel.app) reads the deployed contract straight from the indexer with no wallet, no key, and no install — which is the product claim made literal: anyone can audit compliance and still see no firmware data.
 
-*Just want to see the live registry?* You need nothing at all — [nightseal.vercel.app](https://nightseal.vercel.app) reads the deployed contract straight from the indexer, with no wallet and no key. That is the product claim made literal.
+Run the commands above only to drive the lifecycle yourself. The `deploy` step matters: the committed `deployment.json` points at our registry, and while anyone can *read* it, only the seed that deployed it can approve, revoke, or attest.
 
-*Want to drive the lifecycle yourself?* Stand up your own registry — `npm run cli -- deploy`. The committed `deployment.json` points at our contract, and while anyone can *read* it, only the seed that deployed it can approve, revoke, or attest, so a fresh clone must deploy its own before those actions work. Deploying rewrites `deployment.json` for you.
-
-Every CLI command re-syncs the wallet from genesis (a few minutes). For a multi-step demo, start `npm run serve` once and drive it from the dashboard — each action then takes seconds.
+Each wallet-backed command re-syncs Preview from genesis (~10 minutes), so start `npm run serve` once and drive the demo from the dashboard rather than repeating CLI calls.
 
 **Verify the claims without deploying anything:**
 
