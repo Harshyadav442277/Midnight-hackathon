@@ -10,21 +10,22 @@
 |---|---|
 | **A. Silent revocation** | ✅ **Implemented** — `updateFirmwareLeaf` / `updateComponentLeaf` with `randomBytes(32)` tombstones are live in the contract, CLI, and tests. |
 | **§1 honesty findings + §4 checklist 1–5** | ✅ Done — README attack map, capacity note, softened overclaim, decision-6 wording, unlinkability paragraph all landed; decision 7 fixed this session. |
-| **B. Consensus-level rejection evidence** | 🎯 **Selected as the next build item.** Deploy-safe (no circuit change). Implement **only after** the deploy + evidence + raw-footage gate is dead. Sharpened sketch below. |
+| **B. Consensus-level rejection evidence** | ✅ **Implemented** — `replay` CLI verb, `/api/replay/:device/:component` route, and a dashboard control. Capture happens at `balanceTx` (proven but *unbalanced*), because a balanced held transaction reserves the wallet's DUST and starves the revocation that must follow — that was a real failure on first run. |
 | **C. Split-authority cascade** | ⬇️ Demoted to **post-hackathon**: it reopens the contract while the deploy gate is the whole ballgame, and A already banks the silent-revocation story. Narrate it as the production profile instead. |
 | **D. Vendor-blind approvals / E. Break-glass reveal** | Optional quick wins, only with clear margin after the video exists. |
 | **§4 items 6–8** | Item 8 (record the failed attempt in EVIDENCE.md) folds into the deploy runbook; items 6–7 optional. |
 
-**Sharpened implementation sketch for B** (uses only code that already exists):
-`cli/src/wallet.ts` separates `balanceTx` (build/prove/finalize) from `submitTx`. Wrap the
-`midnightProvider` handed to `buildProviders` with one whose `submitTx` *captures* the
-`FinalizedTransaction` instead of submitting; run `contract.callTx.attest(...)` against the
-pre-revocation state to harvest a fully proven, valid transaction; after the revocation
-transaction confirms, submit the held transaction with the real `wallet.submitTx` and surface
-the node's rejection verbatim (dashboard + `docs/EVIDENCE.md`). Watch for `callTx` blocking on
-finalization after its (captured) submit — race it with a timeout if needed. **Fallback if the
-API resists within ~90 min:** keep today's honest local-failure narrative; the docs already
-never overclaim it.
+**How B was actually built** (the sketch below was close, but the capture point moved):
+intercept `walletProvider.balanceTx`, not `midnightProvider.submitTx`. Proving happens before
+balancing, so the intercepted `UnboundTransaction` already carries the proof and the pre-revocation
+roots in its transcript, while no DUST is committed yet. Throwing from the interceptor ends the
+`callTx` cleanly. Then: revoke the component, and only afterwards balance and submit the held
+transaction. The ledger replays the transcript against present state, its own `checkRoot` query
+answers differently than recorded, and consensus rejects the transaction.
+
+Capturing at `submitTx` — the original sketch — fails on a live network: the finalized transaction
+reserves the wallet's only DUST output, and the revocation that has to happen next dies with
+`Insufficient Funds: could not balance dust`.
 
 **Scope discipline:** nothing below may run before the deployment gate is dead
 (faucet → `deploy` → lifecycle tx hashes → raw footage). Every candidate is tagged

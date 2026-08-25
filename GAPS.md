@@ -19,14 +19,18 @@ Known mocks, shortcuts, caveats. Updated every session. Feeds the README's "Assu
 - ~~OneDrive/node_modules friction~~ — working tree moved to WSL at `/root/nightseal`; the Compact compiler has no Windows binary, so WSL was required regardless.
 
 ## Current (update each session)
-- 2026-08-25 evening: **Funded but not yet deployed.** Wallet holds 5,000 tNIGHT; DUST registration was
-  submitted this session — confirm `DUST > 0` with `npm run cli -- balance` before `deploy`.
-- Proving keys regenerated (~27 MB, all four circuits); proof server verified healthy from Windows and WSL.
-- The dashboard's red NON-COMPLIANT state is a *local* proof-construction failure recorded by the operator
-  service — not an on-chain rejection. The planned held-transaction upgrade
-  ([docs/improvementsByClaude.md](docs/improvementsByClaude.md) §2.B) adds a consensus-level rejection;
-  until it lands, scripts and narration must not claim the chain rejected anything.
-- The UI is exercised end-to-end against a local operator service; the on-chain path is covered by the
-  contract test suite but has not yet run against Preview.
+- 2026-08-25 evening: **Deployed and bootstrapped on Preview.** Contract
+  `160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e`; nine bootstrap transactions
+  plus two attestations confirmed on-chain (docs/EVIDENCE.md). Public read-only dashboard live at
+  https://nightseal.vercel.app.
+- **Two failure modes in the normal `attest` path are distinct, and only one is a chain verdict.**
+  A device whose bound component was revoked cannot resolve a current Merkle path, so it never
+  builds a transaction — that red card is a *local* proof-construction failure recorded by the
+  operator service. The `replay` path is the one that produces a genuine consensus rejection, by
+  submitting a proof built before the revocation. Never describe the ordinary red card as an
+  on-chain rejection.
+- Proving keys regenerated (~27 MB, all four circuits); proof server healthy from Windows and WSL.
 - No browser wallet (Lace) integration — privileged actions go through a local operator service. See ARCHITECTURE.md decision 10.
-- Opaque tombstone replacement is verified in the local simulator, not yet on-chain.
+- Every wallet-touching process re-syncs Preview from genesis (~10 minutes). The operator service
+  holds one warm wallet, which is why the lifecycle is driven over HTTP rather than by repeated
+  CLI invocations. A persistent wallet-state cache would remove this; out of scope for the deadline.
