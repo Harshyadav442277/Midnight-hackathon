@@ -1,0 +1,114 @@
+# NightSeal — Devpost submission copy
+
+This is paste-ready copy. Replace bracketed deployment fields only after the live Preview
+lifecycle is captured.
+
+## Project title
+
+NightSeal
+
+## Tagline
+
+Firmware compliance as a revocable cryptographic capability.
+
+## One-sentence pitch
+
+NightSeal lets registered devices prove that their hidden firmware and every privately bound
+component are currently approved, while a vulnerability can selectively remove that ability
+without revealing which firmware contains the affected component.
+
+## Inspiration and problem
+
+Firmware vendors face a real conflict: auditors need current, independently verifiable
+compliance evidence, but publishing exact versions and component inventories creates a target
+map for attackers and exposes commercially sensitive supply-chain information. A normal allow
+list solves the audit problem by sacrificing privacy. A normal zero-knowledge membership demo
+protects privacy but says little about what happens when policy changes tomorrow.
+
+NightSeal treats compliance as a capability that must survive the *current* policy roots. A
+device is not labelled safe forever. It can prove compliance only while its private firmware,
+its private dependency manifest, and its registered device identity all satisfy the latest
+on-chain state.
+
+## What it does
+
+- Registers a cryptographic identity commitment for each device.
+- Commits to firmware measurements and fixed-size private component manifests.
+- Proves in zero knowledge that the prover knows the registered device secret, the hidden
+  firmware is approved, and all three hidden components remain current.
+- Publishes only the compliance result, device identifier, epoch, and two Merkle roots.
+- Lets an operator revoke a component with an opaque root update. Firmware entries are left
+  untouched, but every secretly dependent build loses the ability to construct a valid proof.
+- Preserves the direct firmware PASS → REVOKE → FAIL lifecycle as a simpler fallback path.
+
+## The memorable technical mechanism
+
+The demo revokes TLS Runtime 3.0 from the component capability tree. The firmware root stays
+exactly the same. An unaffected device re-attests successfully; a device whose hidden manifest
+contains TLS 3.0 cannot obtain a current component path and therefore cannot submit a compliant
+proof. The blast radius emerges from cryptography, not from a backend CVE lookup or a public
+firmware-to-component database.
+
+Policy updates are also operation-hiding at the contract-call level: approval, revocation, and
+cover rotation use the same leaf-update circuit and argument shape. Revocation writes a random
+tombstone with no known opening. Root movement and transaction timing remain public, which is
+documented as an explicit limitation.
+
+## Why Midnight
+
+NightSeal needs private witness execution and public, stateful policy in the same application.
+The private side holds device secrets, firmware measurements, commitment openings, component
+composition, and Merkle paths. The public ledger holds the current capability roots, operator
+authorization, registered identity commitments, epochs, and minimal audit results. A regular
+database could hide the inventory, but auditors would have to trust its operator. A public
+smart contract could make policy auditable, but would expose the inventory. Midnight lets the
+proof connect those two requirements without publishing the witness.
+
+## How it was built
+
+- Compact contract with two current-only Merkle capability trees and a device-identity map.
+- Midnight.js providers, Preview wallet integration, and a local proof server.
+- TypeScript operator/device simulator and auditor API.
+- React dashboard showing both roots, epoch drift, device binding, and the selective
+  component-revocation lifecycle.
+- Eleven lifecycle and adversarial tests covering identity impersonation, component
+  substitution, stale-root replay, rogue operators, secrecy serialization, and both revocation
+  paths.
+
+## Challenges and decisions
+
+The key design challenge was keeping the component relationship private while ensuring an
+approved firmware proof could not swap in a clean component list. NightSeal solves this by
+binding a digest of exactly three component commitments into the firmware capability
+commitment, then checking every component against the current component root in the same
+attestation circuit.
+
+We intentionally did not add tokens, NFTs, AI, extra chains, or a public SBOM. None of them
+improves the security or privacy property. We also rejected fleet-threshold proofs for this
+version because the public per-device status map would make the claimed fleet privacy mostly
+decorative.
+
+## Limitations
+
+The demo derives deterministic measurements and simulates the hardware root of trust. A
+production device would obtain the measurement and signing authority from measured boot and a
+TPM or secure element. Manifests currently contain exactly three components and each tree has
+1,024 leaves. Operation type is hidden by the update shape, but timing and root changes are
+public. The operator service is a loopback-only hackathon component, not production key
+infrastructure.
+
+## Links
+
+- Source: https://github.com/Harshyadav442277/Midnight-hackathon
+- Preview contract: `[PENDING FAUCET FUNDING]`
+- Root-update transaction: `[PENDING LIVE LIFECYCLE]`
+- Demo video: `[PENDING RECORDING]`
+
+## Final submission checklist
+
+- [ ] Preview contract link resolves publicly.
+- [ ] Root-update transaction link resolves publicly.
+- [ ] Video shows firmware root unchanged while component root changes.
+- [ ] Video shows clean recovery and secretly dependent failure.
+- [ ] README contains contract, transaction, and video links.
+- [ ] Public repository contains no `.env`, wallet seed, or private openings.
