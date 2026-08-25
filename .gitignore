@@ -33,3 +33,5 @@ contract/src/managed/nightseal/compiler/
 
 # local scratch files
 scratch-*
+.vercel
+.env*

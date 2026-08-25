@@ -100,6 +100,7 @@ infrastructure.
 ## Links
 
 - Source: https://github.com/Harshyadav442277/Midnight-hackathon
+- Live auditor dashboard (read-only): https://nightseal.vercel.app
 - Preview contract: https://preview.midnightexplorer.com/contract/160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e
 - Root-update transaction: `[PENDING LIVE LIFECYCLE]`
 - Demo video: `[PENDING RECORDING]`

@@ -38,12 +38,19 @@
   transaction: expected instance of StateValue` — the indexer had not yet indexed the fresh
   contract when `findDeployedContract` re-queried it (see the runbook §2 wrinkle note). Deploy log
   preserved at `/root/nightseal/logs/serve-deploy-attempt1.log`.
-- **`npm run cli -- approve` was started in the background (~16:20 IST)** to publish the baseline
-  (3 device registrations + 4 components + 2 builds); log: `/root/nightseal/logs/approve.log`.
-  On takeover: check that log for nine `tx` hashes → copy them into docs/EVIDENCE.md's bootstrap
-  row → continue runbook §3 (lifecycle + footage). If it failed, re-run `npm run cli -- approve`
-  (idempotent). The dashboard afterwards: `npm run serve` (will reuse deployment.json and skip
-  deploying).
+- **Bootstrap attempt 2 also failed** — fresh-process private-state access needs
+  `privateStateProvider.setContractAddress(...)` first (midnight-js 4.1.1 level provider).
+  **Fixed in `joinRegistry`** (cli/src/registry.ts); runbook §2 documents both wrinkles.
+  **Attempt 3 (`npm run cli -- approve`) is running in the background**, log:
+  `/root/nightseal/logs/approve2.log`. On takeover: check it for nine `tx` hashes → copy into
+  docs/EVIDENCE.md's bootstrap row → continue runbook §3 (lifecycle + footage). If it failed,
+  read the error, fix, re-run — `approve` is idempotent. Dashboard afterwards: `npm run serve`
+  (reuses deployment.json, skips deploying).
+- **Public auditor dashboard LIVE: https://nightseal.vercel.app** (Vercel project `nightseal`,
+  `NIGHTSEAL_CONTRACT_ADDRESS` env set for Production; `/api/state` verified returning live
+  indexer JSON with `readOnly: true`). Deployment URLs are SSO-protected; the production domain
+  is public — that split is Vercel's standard protection and is correct. Redeploy with
+  `vercel deploy --prod --yes` from the Windows checkout.
 
 ## Immediate continuation (exact order — TASKS.md Phase D)
 1. Confirm the background `approve` finished: nine tx hashes in `/root/nightseal/logs/approve.log`

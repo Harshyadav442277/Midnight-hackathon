@@ -23,7 +23,7 @@
 
 ## Phase F — final submission
 - [ ] ~3-min video per docs/DEMO_SCRIPT.md (include Beat 3b only if Phase B landed)
-- [ ] Read-only auditor dashboard deployed to Vercel (`NIGHTSEAL_CONTRACT_ADDRESS` env; read-only — the operator seed never leaves the local machine)
+- [x] Read-only auditor dashboard **live at https://nightseal.vercel.app** (`NIGHTSEAL_CONTRACT_ADDRESS` set in Vercel; `/api/state` verified returning live indexer data; the operator seed never leaves the local machine)
 - [ ] Final `npm run typecheck && npm test && npm run build`; commit; push
 - [ ] Devpost form + video + public repo link — **well before Aug 27 07:00 IST** (docs/SUBMISSION.md is paste-ready)
 

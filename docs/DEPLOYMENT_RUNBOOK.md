@@ -31,12 +31,17 @@ component capabilities, publishes two firmware capabilities, persists the addres
 and prints the explorer URL. Copy the contract address and every transaction hash into
 `docs/EVIDENCE.md`.
 
-> **Known wrinkle (hit on 2026-08-25):** the deploy transaction confirms before the indexer
-> serves the new contract state, so the same-process bootstrap can die seconds later with
-> `Unexpected error executing scoped transaction: expected instance of StateValue`. The
-> deployment itself is fine — `deployment.json` is written. Wait a minute, then publish the
-> baseline with `npm run cli -- approve` (idempotent; safe to re-run — registrations and leaf
-> writes overwrite themselves, and extra epoch bumps before the demo are harmless).
+> **Known wrinkles (both hit on 2026-08-25):**
+> 1. The deploy transaction confirms before the indexer serves the new contract state, so the
+>    same-process bootstrap can die seconds later with `Unexpected error executing scoped
+>    transaction: expected instance of StateValue`. The deployment itself is fine —
+>    `deployment.json` is written. Wait a minute, then publish the baseline with
+>    `npm run cli -- approve` (idempotent; safe to re-run — registrations and leaf writes
+>    overwrite themselves, and extra epoch bumps before the demo are harmless).
+> 2. `Contract address not set. Call setContractAddress() before accessing private state.` —
+>    the level private-state provider scopes state by contract address; fixed in
+>    `joinRegistry` (it now calls `setContractAddress` before the role-switching state write).
+>    If this reappears, some new code path is writing private state before that call.
 
 ## 3. Capture the cryptographic lifecycle
 

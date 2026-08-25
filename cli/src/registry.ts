@@ -129,6 +129,10 @@ export const joinRegistry = async (
   contractAddress: string,
   privateState: NightSealPrivateState,
 ) => {
+  // The level private-state provider scopes state by contract address and throws on
+  // any access before setContractAddress; midnight-js only sets it inside its own
+  // deploy/find flows, which run after this manual role-switching write.
+  providers.privateStateProvider.setContractAddress(contractAddress);
   await providers.privateStateProvider.set(PRIVATE_STATE_ID, privateState);
   return findDeployedContract(providers, {
     contractAddress,
