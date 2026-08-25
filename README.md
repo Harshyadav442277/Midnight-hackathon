@@ -81,7 +81,7 @@ Midnight's official ZK Loan tutorial shares this skeleton — check something in
 | After a component CVE | n/a | **firmware root stays unchanged, but secretly dependent firmware loses proof power** |
 | Failure mode | n/a | **an affected device provably cannot construct a passing proof** |
 
-The full lifecycle—attest → CVE → root update → selective failed re-attestation—is executable and covered by the test suite. Preview transaction links will replace the pending deployment block above as soon as the CAPTCHA-gated wallet is funded.
+The full lifecycle—attest → CVE → root update → selective failed re-attestation → consensus-rejected replay—**has been executed on Preview**, with the firmware root verified byte-identical across the component revocation. Every transaction hash is in [docs/EVIDENCE.md](docs/EVIDENCE.md).
 
 ## Why this needs Midnight specifically
 
@@ -144,7 +144,7 @@ Stated plainly, because a registry nobody can audit honestly is not worth buildi
 
 - **The hardware root of trust is mocked.** See the architecture note above. This is the single largest gap between this project and a deployable system.
 - **The registry operator learns the firmware measurements.** It computes the commitments and issues the blinding factors, so NightSeal protects firmware data from the public chain and from attackers — not from the operator that approves builds. A production design would have vendors generate their own commitments.
-- **A rejected attestation is not recorded on-chain.** Writing "device X failed" to the ledger would require proving *non*-membership, which this design deliberately refuses to do. A revoked device simply cannot build a valid proof. The dashboard's red state comes from the operator service's record of the last attempt, and the card says so. The on-chain evidence of revocation is the root change plus the device's now-stale epoch.
+- **No "device X failed" record is ever written to the ledger.** That would require proving *non*-membership, which this design deliberately refuses to do. A revoked device simply cannot build a valid proof, so its ordinary failure happens locally and the dashboard labels it as an attempt record rather than chain state. The on-chain evidence of revocation is the root change plus the device's now-stale epoch — and, when a proof built before the revocation is replayed, an outright transaction rejection by the ledger.
 - **Compliance is epoch-relative.** Every device goes amber the moment the baseline moves, including unaffected ones — correct, since nobody has proved anything against the new root yet, but amber alone is not evidence of a vulnerability.
 - **A single operator key** controls both capability sets and device enrollment; there is no multisig or governance.
 - **Device identity is cryptographically bound, but hardware protection is mocked.** The proof requires the registered per-device secret, but the simulator stores it in local private state. Production would protect and enroll it with a TPM/secure element and device PKI.

@@ -43,11 +43,18 @@ on-chain state.
 
 ## The memorable technical mechanism
 
-The demo revokes TLS Runtime 3.0 from the component capability tree. The firmware root stays
-exactly the same. An unaffected device re-attests successfully; a device whose hidden manifest
-contains TLS 3.0 cannot obtain a current component path and therefore cannot submit a compliant
-proof. The blast radius emerges from cryptography, not from a backend CVE lookup or a public
+The demo revokes TLS Runtime 3.0 from the component capability tree. **This was executed on
+Preview and the firmware root came back byte-identical** while the component root moved. An
+unaffected device re-attested successfully; the device whose hidden manifest contains TLS 3.0
+could not obtain a current component path and therefore could not submit a compliant proof at
+all. The blast radius emerges from cryptography, not from a backend CVE lookup or a public
 firmware-to-component database.
+
+There is a second, stronger failure mode. A proof built *before* the revocation — honest and
+fully valid — was submitted afterwards anyway. The ledger re-checked the roots recorded in its
+transcript against present state and **rejected the transaction itself**. Revocation is
+enforced by consensus, not by application logic. Both outcomes are recorded with transaction
+hashes in [docs/EVIDENCE.md](EVIDENCE.md).
 
 Policy updates are also operation-hiding at the contract-call level: approval, revocation, and
 cover rotation use the same leaf-update circuit and argument shape. Revocation writes a random
@@ -102,13 +109,16 @@ infrastructure.
 - Source: https://github.com/Harshyadav442277/Midnight-hackathon
 - Live auditor dashboard (read-only): https://nightseal.vercel.app
 - Preview contract: https://preview.midnightexplorer.com/contract/160c6bfcd360c8806bea5d45740f45d80930482038f57e55b72f6d002bb0ef6e
-- Root-update transaction: `[PENDING LIVE LIFECYCLE]`
+- Component-revocation (root-update) transaction: https://preview.midnightexplorer.com/tx/98d6a6ab5836e5212d663368cb571e99838fd139fbe65ae09915b9e64c0c1507
+- Attestation transaction: https://preview.midnightexplorer.com/tx/73dea0b0f198c8033eb7e90f796b871819574bc2adc4a36869b264dcf95ab0e7
+- Post-revocation recovery of the unaffected device: https://preview.midnightexplorer.com/tx/040fd591c82b0a0029893c4cd55650d85a20e2a451850a29b07340466560353d
+- Full lifecycle evidence: [docs/EVIDENCE.md](EVIDENCE.md)
 - Demo video: `[PENDING RECORDING]`
 
 ## Final submission checklist
 
-- [ ] Preview contract link resolves publicly.
-- [ ] Root-update transaction link resolves publicly.
+- [x] Preview contract link resolves publicly.
+- [x] Root-update transaction link resolves publicly.
 - [ ] Video shows firmware root unchanged while component root changes.
 - [ ] Video shows clean recovery and secretly dependent failure.
 - [ ] README contains contract, transaction, and video links.
