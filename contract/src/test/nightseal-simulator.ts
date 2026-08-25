@@ -45,17 +45,56 @@ export class NightSealSimulator {
     return this.circuitContext.currentPrivateState;
   }
 
-  /** Commitment the contract would compute for this device's firmware. */
-  public commitmentFor(measurement: Uint8Array, randomness: Uint8Array): Uint8Array {
-    return this.contract.circuits.firmwareCommitment(
+  public componentCommitment(measurement: Uint8Array, randomness: Uint8Array): Uint8Array {
+    return this.contract.circuits.componentCommitment(
       this.circuitContext,
       measurement,
       randomness,
     ).result;
   }
 
+  public deviceIdentity(secretKey: Uint8Array): Uint8Array {
+    return this.contract.circuits.deviceIdentity(this.circuitContext, secretKey).result;
+  }
+
+  public componentManifest(components: [Uint8Array, Uint8Array, Uint8Array]): Uint8Array {
+    return this.contract.circuits.componentManifest(this.circuitContext, components).result;
+  }
+
+  /** Commitment the contract would compute for this device's firmware capability. */
+  public commitmentFor(
+    measurement: Uint8Array,
+    manifest: Uint8Array,
+    randomness: Uint8Array,
+  ): Uint8Array {
+    return this.contract.circuits.firmwareCommitment(
+      this.circuitContext,
+      measurement,
+      manifest,
+      randomness,
+    ).result;
+  }
+
+  public registerDevice(deviceId: Uint8Array, identity: Uint8Array): Ledger {
+    this.circuitContext = this.contract.impureCircuits.registerDevice(
+      this.circuitContext,
+      deviceId,
+      identity,
+    ).context;
+    return this.getLedger();
+  }
+
   public approveFirmware(commitment: Uint8Array, index: bigint): Ledger {
-    this.circuitContext = this.contract.impureCircuits.approveFirmware(
+    this.circuitContext = this.contract.impureCircuits.updateFirmwareLeaf(
+      this.circuitContext,
+      commitment,
+      index,
+    ).context;
+    return this.getLedger();
+  }
+
+  public approveComponent(commitment: Uint8Array, index: bigint): Ledger {
+    this.circuitContext = this.contract.impureCircuits.updateComponentLeaf(
       this.circuitContext,
       commitment,
       index,
@@ -64,8 +103,22 @@ export class NightSealSimulator {
   }
 
   public revokeFirmware(index: bigint): Ledger {
-    this.circuitContext = this.contract.impureCircuits.revokeFirmware(
+    const tombstone = new Uint8Array(32).fill(0xf1);
+    tombstone[31] = Number(index % 251n);
+    this.circuitContext = this.contract.impureCircuits.updateFirmwareLeaf(
       this.circuitContext,
+      tombstone,
+      index,
+    ).context;
+    return this.getLedger();
+  }
+
+  public revokeComponent(index: bigint): Ledger {
+    const tombstone = new Uint8Array(32).fill(0xc1);
+    tombstone[31] = Number(index % 251n);
+    this.circuitContext = this.contract.impureCircuits.updateComponentLeaf(
+      this.circuitContext,
+      tombstone,
       index,
     ).context;
     return this.getLedger();

@@ -8,13 +8,19 @@
 import type { MerkleTreePath, WitnessContext } from '@midnight-ntwrk/compact-runtime';
 import type { Ledger } from './managed/nightseal/contract/index.js';
 
+export type ComponentVector = [Uint8Array, Uint8Array, Uint8Array];
+
 export type NightSealPrivateState = {
-  /** Identity key. For the registry operator this authorises baseline changes. */
+  /** Operator authorisation key or the registered device-secret opening. */
   readonly secretKey: Uint8Array;
   /** The device's firmware measurement — the secret being proven about. */
   readonly measurement: Uint8Array;
   /** Blinding factor issued by the operator alongside the approval. */
   readonly randomness: Uint8Array;
+  /** Private component measurements bound into this firmware capability. */
+  readonly components: ComponentVector;
+  /** Openings for the corresponding approved-component commitments. */
+  readonly componentRandomness: ComponentVector;
   /**
    * Last Merkle path this device successfully attested with. Kept so the demo can
    * replay a stale proof against a new baseline and show it being rejected.
@@ -26,7 +32,15 @@ export const createNightSealPrivateState = (
   secretKey: Uint8Array,
   measurement: Uint8Array,
   randomness: Uint8Array,
-): NightSealPrivateState => ({ secretKey, measurement, randomness });
+  components: ComponentVector,
+  componentRandomness: ComponentVector,
+): NightSealPrivateState => ({
+  secretKey,
+  measurement,
+  randomness,
+  components,
+  componentRandomness,
+});
 
 export const witnesses = {
   localSecretKey: ({
@@ -50,6 +64,20 @@ export const witnesses = {
     privateState.randomness,
   ],
 
+  componentMeasurements: ({
+    privateState,
+  }: WitnessContext<Ledger, NightSealPrivateState>): [NightSealPrivateState, ComponentVector] => [
+    privateState,
+    privateState.components,
+  ],
+
+  componentRandomness: ({
+    privateState,
+  }: WitnessContext<Ledger, NightSealPrivateState>): [NightSealPrivateState, ComponentVector] => [
+    privateState,
+    privateState.componentRandomness,
+  ],
+
   /**
    * Resolve this device's Merkle path from public ledger state.
    *
@@ -69,5 +97,19 @@ export const witnesses = {
       );
     }
     return [{ ...privateState, lastPath: path }, path];
+  },
+
+  /** Resolve one hidden component against the current component capability set. */
+  componentPath: (
+    { ledger, privateState }: WitnessContext<Ledger, NightSealPrivateState>,
+    commitment: Uint8Array,
+  ): [NightSealPrivateState, MerkleTreePath<Uint8Array>] => {
+    const path = ledger.componentSet.findPathForLeaf(commitment);
+    if (path === undefined) {
+      throw new Error(
+        'A component bound into this firmware is not in the current approved component baseline — it was never approved, or it has been revoked.',
+      );
+    }
+    return [privateState, path];
   },
 };
