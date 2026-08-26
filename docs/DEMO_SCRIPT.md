@@ -58,6 +58,17 @@ Every device should show `RE-ATTESTATION REQUIRED`.
 
 *(On Windows PowerShell write `curl.exe` rather than `curl`.)*
 
+**About the transaction log — read this before you record.** The "Recent transactions" panel at
+the bottom of the dashboard is **client-side only: it empties every time the page reloads.** Load
+the page once before you start and **do not refresh during a take**, or your history disappears
+mid-video. The upside is that it builds as you go, so by beat 3 it reads as the whole story:
+two passes, then the rejection. It sits *below* the dependency panel, so reaching it means
+scrolling.
+
+Its links open in **new tabs** (`target="_blank"`). To show the explorer, prefer Ctrl+Tab to
+your pre-opened tab 2 and press F5 — clicking log links mid-take leaves a trail of tabs on
+camera. If you do click one, close it before continuing.
+
 **About the third card.** The demo uses *Sensor gateway · 02* (clean) and *Router · fleet-07*
 (secretly depends on the vulnerable component). *Edge camera · 11* just sits amber throughout —
 it is a device that has not checked in. Leave it alone; don't draw attention to it.
@@ -154,8 +165,12 @@ un-filmable all-green state. Epoch numbers climbing between takes is fine; only 
 ## Beat 3 · 2:00–2:20 · The chain refuses
 
 ### 🎬 DO
-1. Wait for the log line: **"stale proof REJECTED by the Midnight ledger"**.
-2. Point at the red card: **"Rejected by consensus, not by this dashboard."**
+1. The red card appears near the top — point there first:
+   **"Rejected by consensus, not by this dashboard."**
+2. Then scroll down past the dependency panel to **Recent transactions** and hold on the line:
+   **"Router · fleet-07: stale proof REJECTED by the Midnight ledger"**.
+   The log above it shows the two passes from beat 1 — the whole story in one frame.
+3. Scroll back up to the cards.
 
 ### 🎤 SAY
 > "Something else just happened. Before revoking, we generated a fresh attestation for that
