@@ -43,3 +43,4 @@ scratch-*
 .vercel
 .env*
 docs/media/annot*.html
+nightseal-submission.zip
