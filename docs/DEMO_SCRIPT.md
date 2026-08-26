@@ -1,137 +1,193 @@
-# DEMO_SCRIPT — ~3 minutes, four beats
+# DEMO_SCRIPT — ~3 minutes
 
-Film the dashboard and the block explorer **side by side** for the whole middle section. Record each beat as soon as it works; do not bet the submission on one final take.
+Two tracks, kept separate:
 
-**Setup before recording**
-```bash
-docker start nightseal-proof-server
-npm run serve                      # http://localhost:8787
-```
-Browser left: the dashboard. Browser right: the contract on `preview.midnightexplorer.com`.
+- **🎬 DO** — what you click and show. Glance at this.
+- **🎤 SAY** — what you speak, word for word. Read this.
 
-**Timing, measured on Preview — plan your edit around it.** Every action generates a real ZK
-proof and waits for the transaction, so nothing is instant:
+If you'd rather record voice in one pass, skip to **[Narration only](#narration-only--teleprompter)**
+at the bottom: it is the whole script with no stage directions.
+
+---
+
+## Before you press record
+
+1. **Windows PowerShell:** `docker start nightseal-proof-server` — check http://localhost:6300/ answers.
+2. **WSL terminal:** `cd /root/nightseal && npm run serve` — wait for `operator service on http://127.0.0.1:8787`. **Do not record before this line appears** (the wallet re-syncs for ~10 minutes).
+3. **Browser left:** http://localhost:8787 · **Browser right:** the contract on `preview.midnightexplorer.com`.
+4. Both devices should read **COMPLIANT** at the same epoch. That is how the chain is parked right now.
+5. Hide bookmarks, turn on Focus Assist, 1080p. **Never show the WSL terminal or `.env` on camera.**
+
+**Timing — plan the edit around it.** Every action is a real ZK proof, so nothing is instant:
 
 | Action | Roughly |
 |---|---|
-| `npm run serve` startup (wallet re-syncs from genesis) | ~10 min — start it well before you record |
 | Attest one device | 30–60 s |
-| Revoke a component | ~20 s |
-| Revoke + replay stale proof | ~70 s (proves, revokes, then submits) |
+| Revoke + replay stale proof | ~70 s |
 
-Record continuously and cut the waits in the edit, or narrate over them — the pauses are honest
-proof generation, not lag. **Do not** start recording until the service prints
-`operator service on http://...`.
+Record continuously and cut the waits, or talk over them. The pauses are honest proof
+generation, not lag.
 
-**To reset between takes** (restores the revoked component so the demo runs again):
-```bash
-curl -X POST http://localhost:8787/api/approve
-```
-then attest both devices back to green. This takes a few minutes; it does not need a redeploy.
-
-No unexplained acronym before 1:00. "SBOM" and "CVE" are only allowed after the stake lands.
+**Reset between takes:** `curl -X POST http://localhost:8787/api/approve`, then attest both
+devices back to green (~5 min). Epoch numbers climbing between takes is fine — only the drift matters.
 
 ---
 
-## 0:00–0:20 — The stake
+## Beat 0 · 0:00–0:20 · The stake
 
-Over the dashboard header:
+### 🎬 DO
+1. Show the dashboard, both cards green. Stay still — no clicking yet.
 
-> "Your router's manufacturer must prove its firmware is clean — without publishing a map of its insides for attackers."
-
-Then: regulators demand proof of firmware provenance; manufacturers cannot afford the disclosure that proof normally requires; zero knowledge is the only thing that satisfies both at once.
+### 🎤 SAY
+> "Your router's manufacturer must prove its firmware is clean — without publishing a map of its
+> insides for attackers. Regulators increasingly demand proof of what's running on a device. But
+> publishing that proof hands attackers a target map. NightSeal does both at once: it proves
+> compliance, and reveals nothing."
 
 ---
 
-## 0:20–1:00 — Beat 1: it passes
+## Beat 1 · 0:20–1:00 · It passes
 
-Action: click **Attest now** on *Sensor gateway · 02*.
+### 🎬 DO
+1. Click **Attest now** on *Sensor gateway · 02*.
+2. Let it run — the button reads "Generating proof…".
+3. When the card turns green, point at the **Device-bound proof** label.
+4. Cut to the explorer, show the transaction.
+5. Scroll the on-chain state slowly.
 
-- The button reads "Generating proof…" — say that the proof is being built locally, on the device side of the line.
-- The card turns **green — COMPLIANT**, epoch matching the baseline.
-- Cut to the explorer: the transaction is there.
-
-Point to the device-bound label and the two roots. One proof established three things:
-the prover knows this registered device's secret, the hidden firmware is current, and
-all components privately bound into it are current.
-
-Say, over the explorer view:
-
+### 🎤 SAY
+> "This device is proving three things in a single proof: that it holds the secret it was
+> registered with, that its firmware is on the current approved list, and that every component
+> built into that firmware is approved too. All of it stays private — the proof is generated
+> here, on the device's side of the line."
+>
+> *(when green)*
+>
 > "The chain shows a yes. It never shows the firmware."
-
-Scroll the public state on screen: a device id, a status, an epoch, a Merkle root. No hash, no version, no supplier.
-
----
-
-## 1:00–2:00 — Beat 2: the CVE, and the money shot
-
-> "A vulnerability lands in a component used by an unknown subset of firmware."
-
-Action: in the operator-only panel, click **Revoke + replay stale proof** on *TLS Runtime 3.0*.
-
-> **Use this button, not the plain "Revoke component (CVE)" one.** It does the revocation *and*
-> the consensus rejection in a single ~70-second action, which is why beats 2 and 3b run in one
-> pass. The plain revoke button is the simpler alternative, but demonstrating the replay
-> afterwards would need a full reset first — the component would already be gone, so no
-> pre-revocation proof could be built.
-
-While it runs (narrate over the wait):
-
-- The baseline epoch strip **flashes amber** and increments.
-- The **component root changes while the firmware root stays exactly the same**. Say this out loud; it is the flagship visual.
-- Every attested device drops to **RE-ATTESTATION REQUIRED** with a drift count. Say why: the baseline moved, so nobody has proved anything against the new root yet.
-- Cut to the explorer: **the root-update transaction**. Linger here — it is the difference between a described lifecycle and an implemented one.
-
-Say:
-
-> "The chain sees the policy root move, but the same opaque update could be an approval, revocation, or cover rotation. It does not learn which firmware contains the component; the proof circuit discovers the blast radius privately."
-
-Then the transaction log line lands — that is beat 3b below.
+>
+> *(over the explorer)*
+>
+> "A device id, a status, an epoch, two cryptographic roots. No hash. No version. No supplier."
 
 ---
 
-## 2:00–2:20 — Beat 3: the chain itself refuses a stale proof
+## Beat 2 · 1:00–2:00 · The vulnerability
 
-Still the same click. Before revoking, it proved an attestation while the component was still
-approved; after revoking, it submitted that now-stale proof for real. The log line lands:
+### 🎬 DO
+1. Click **Revoke + replay stale proof** on *TLS Runtime 3.0*.
+   **This exact button** — it does the revocation *and* beat 3 in one ~70-second action.
+2. While it runs, point at, in this order:
+   - the **epoch** number incrementing,
+   - the **component capability root** — it changes,
+   - the **firmware capability root** — **it does not change**. Hold on this.
+3. Note every device dropping to amber.
+4. Cut to the explorer, show the new transaction.
 
-> *Router · fleet-07: stale proof REJECTED by the Midnight ledger*
-
-and the device card turns red reading **"Rejected by consensus, not by this dashboard."**
-
-Say:
-
-> "That proof was generated *before* the revocation, and it is perfectly valid — it honestly
-> proves a path to the roots that existed a moment ago. We submitted it anyway. The Midnight
-> ledger re-checked those roots against the present and refused the transaction. That rejection
-> is not our server's opinion. It is consensus."
-
-This is the strongest evidence in the demo: the failure is produced by the chain, with no
-application logic involved.
-
----
-
-## 2:20–2:40 — Beat 4: one recovers, one cannot
-
-Action: click **Attest now** on *Sensor gateway · 02* → back to **green, COMPLIANT** at the new epoch.
-
-Action: click **Attest now** on *Router · fleet-07* → it stays **red**, and the card's note now
-changes to the *local* failure: the proof could not even be built.
-
-Say the important sentence:
-
-> "The failed device's firmware leaf is still approved. The service is not consulting a CVE list: the local prover cannot obtain a path from one bound component to the current component root, so cryptography prevents it from constructing a valid proof."
-
-Two different red states, and the card says which is which: one where the chain refused a proof,
-one where no proof could exist. Neither is a backend deciding who passes.
+### 🎤 SAY
+> "Now a vulnerability lands — not in the firmware itself, but in one component inside it. The
+> operator removes that component."
+>
+> *(pointing at the roots)*
+>
+> "Watch these two values. The component root just changed. The firmware root did not — it is
+> byte for byte identical. No firmware was touched, nothing was marked unsafe, and no list of
+> affected products was published anywhere."
+>
+> *(over the explorer)*
+>
+> "And here is what the outside world sees: one update, carrying one opaque value. It could be
+> an approval. It could be a revocation. It could be routine maintenance. There is no way to
+> tell which — so an attacker cannot use this chain to learn that a vulnerability exists."
 
 ---
 
-## 2:40–3:00 — The boundary, and close
+## Beat 3 · 2:00–2:20 · The chain refuses
 
-> "The hardware root of trust is the platform's job — measured boot and a TPM quote. Our contribution is the privacy-preserving transparency layer above it."
+### 🎬 DO
+1. Wait for the log line: **"stale proof REJECTED by the Midnight ledger"**.
+2. Point at the red card: **"Rejected by consensus, not by this dashboard."**
 
-Flash `docs/architecture.svg` with the out-of-scope band visible. Then the deployed contract address on screen. Close on the stake line.
+### 🎤 SAY
+> "Something else just happened. Before revoking, we generated a valid attestation and held onto
+> it. Then we submitted it — after the revocation. That proof was genuine. It was accepted
+> moments earlier. The network re-checked it against the present state and threw the transaction
+> out. That rejection is not our server's opinion. That is consensus."
+
+---
+
+## Beat 4 · 2:20–2:40 · One recovers, one cannot
+
+### 🎬 DO
+1. Click **Attest now** on *Sensor gateway · 02* → goes green at the new epoch.
+2. Click **Attest now** on *Router · fleet-07* → stays red; the note changes.
+3. Point at the changed note.
+
+### 🎤 SAY
+> "The clean device proves itself again immediately and goes green. The affected one cannot —
+> and notice its firmware is still approved. Nothing looked it up on a vulnerability list. It
+> simply can no longer build a valid proof, because one component inside it no longer exists in
+> the approved set. The failure is arithmetic, not policy."
+
+---
+
+## Beat 5 · 2:40–3:00 · Close
+
+### 🎬 DO
+1. Flash `docs/architecture.svg` with the out-of-scope band visible.
+2. Show the contract address / explorer page.
+3. End on the dashboard.
+
+### 🎤 SAY
+> "Measuring the firmware in the first place is the hardware's job — secure boot and a TPM. What
+> we built is the layer above it: the part that lets a manufacturer prove compliance today,
+> lose that ability the moment a component becomes unsafe, and never publish a map of its
+> insides to anyone."
+
+---
+
+## Narration only — teleprompter
+
+Read straight through; the stage directions are gone. Roughly 420 words ≈ 3 minutes at a calm pace.
+
+> Your router's manufacturer must prove its firmware is clean — without publishing a map of its
+> insides for attackers. Regulators increasingly demand proof of what's running on a device. But
+> publishing that proof hands attackers a target map. NightSeal does both at once: it proves
+> compliance, and reveals nothing.
+>
+> This device is proving three things in a single proof: that it holds the secret it was
+> registered with, that its firmware is on the current approved list, and that every component
+> built into that firmware is approved too. All of it stays private — the proof is generated
+> here, on the device's side of the line.
+>
+> The chain shows a yes. It never shows the firmware.
+>
+> A device id, a status, an epoch, two cryptographic roots. No hash. No version. No supplier.
+>
+> Now a vulnerability lands — not in the firmware itself, but in one component inside it. The
+> operator removes that component.
+>
+> Watch these two values. The component root just changed. The firmware root did not — it is
+> byte for byte identical. No firmware was touched, nothing was marked unsafe, and no list of
+> affected products was published anywhere.
+>
+> And here is what the outside world sees: one update, carrying one opaque value. It could be an
+> approval. It could be a revocation. It could be routine maintenance. There is no way to tell
+> which — so an attacker cannot use this chain to learn that a vulnerability exists.
+>
+> Something else just happened. Before revoking, we generated a valid attestation and held onto
+> it. Then we submitted it — after the revocation. That proof was genuine. It was accepted
+> moments earlier. The network re-checked it against the present state and threw the transaction
+> out. That rejection is not our server's opinion. That is consensus.
+>
+> The clean device proves itself again immediately and goes green. The affected one cannot — and
+> notice its firmware is still approved. Nothing looked it up on a vulnerability list. It simply
+> can no longer build a valid proof, because one component inside it no longer exists in the
+> approved set. The failure is arithmetic, not policy.
+>
+> Measuring the firmware in the first place is the hardware's job — secure boot and a TPM. What
+> we built is the layer above it: the part that lets a manufacturer prove compliance today, lose
+> that ability the moment a component becomes unsafe, and never publish a map of its insides to
+> anyone.
 
 ---
 
@@ -139,13 +195,12 @@ Flash `docs/architecture.svg` with the out-of-scope band visible. Then the deplo
 
 - [ ] Green COMPLIANT card, close up
 - [ ] Explorer: attestation transaction
-- [ ] Explorer: **root-update transaction** (the important one)
-- [ ] Firmware root unchanged + component root changed, in the same shot
-- [ ] Baseline epoch flash + all cards dropping to amber
-- [ ] Green recovery on the unaffected device
-- [ ] **Log line: "stale proof REJECTED by the Midnight ledger"** (the strongest shot)
-- [ ] **Red card reading "Rejected by consensus, not by this dashboard"**
-- [ ] Red card again after a plain re-attest, now showing the *local* failure note
+- [ ] **Firmware root unchanged + component root changed, in the same frame** (the flagship visual)
+- [ ] Epoch incrementing / cards dropping to amber
+- [ ] Explorer: the revocation transaction (looks like any other success)
+- [ ] **Log line: "stale proof REJECTED by the Midnight ledger"**
+- [ ] **Red card: "Rejected by consensus, not by this dashboard"**
+- [ ] Green recovery on the clean device
+- [ ] Red card again after re-attesting, now showing the *local* failure note
 - [ ] Architecture diagram still
 - [ ] Contract address on screen
-- [ ] Device-bound proof label visible on a green card
