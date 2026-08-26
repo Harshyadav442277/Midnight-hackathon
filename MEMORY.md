@@ -20,7 +20,11 @@ The complete lifecycle ran against the live Preview registry:
    revocation is enforced by the chain, not by our service.
 
 ## Ready to film — the chain is in a clean demo state
-**Epoch 28, all components approved, both devices COMPLIANT.** The demo can be run from the top.
+**The correct pre-recording state is every device AMBER (`RE-ATTESTATION REQUIRED`), not green.**
+A green card does not visibly change when you attest it, so an all-green start has no flip to
+film. Get there with one command and *do not attest afterwards*:
+`curl -X POST http://localhost:8787/api/approve` (republishes policy, bumps the epoch by 6,
+leaves every device amber). Same command resets between takes.
 The operator service is **not** left running (it dies with the session, and every start costs one
 ~10-minute wallet sync). Start it yourself and wait for `operator service on ...`. To film:
 ```

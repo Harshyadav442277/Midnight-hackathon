@@ -15,8 +15,34 @@ at the bottom: it is the whole script with no stage directions.
 1. **Windows PowerShell:** `docker start nightseal-proof-server` — check http://localhost:6300/ answers.
 2. **WSL terminal:** `cd /root/nightseal && npm run serve` — wait for `operator service on http://127.0.0.1:8787`. **Do not record before this line appears** (the wallet re-syncs for ~10 minutes).
 3. **Browser left:** http://localhost:8787 · **Browser right:** the contract on `preview.midnightexplorer.com`.
-4. Both devices should read **COMPLIANT** at the same epoch. That is how the chain is parked right now.
+4. **Check the starting state — this is the one thing that ruins a take.** Every device must read
+   **RE-ATTESTATION REQUIRED** (amber), *not* COMPLIANT. See below.
 5. Hide bookmarks, turn on Focus Assist, 1080p. **Never show the WSL terminal or `.env` on camera.**
+
+### ⚠️ Start amber, not green
+
+A card only visibly changes if it is **not already green at the current epoch**. If every device
+is already COMPLIANT, clicking **Attest now** re-proves the same thing at the same epoch and
+*nothing moves on screen* — there is no flip to film.
+
+So before recording, move the baseline **without** attesting:
+
+```bash
+curl -X POST http://localhost:8787/api/approve
+```
+
+That republishes the policy (epoch jumps by 6) and leaves every device amber —
+"the baseline moved, this device has not proved itself against the new one." **Do not attest
+afterwards.** Now Beat 1's click produces a real amber → green flip, and every later beat has a
+visible transition too.
+
+Takes about four minutes. Verify before recording:
+
+```bash
+curl -s http://localhost:8787/api/state
+```
+
+Every device should show `RE-ATTESTATION REQUIRED`.
 
 **Timing — plan the edit around it.** Every action is a real ZK proof, so nothing is instant:
 
@@ -28,8 +54,10 @@ at the bottom: it is the whole script with no stage directions.
 Record continuously and cut the waits, or talk over them. The pauses are honest proof
 generation, not lag.
 
-**Reset between takes:** `curl -X POST http://localhost:8787/api/approve`, then attest both
-devices back to green (~5 min). Epoch numbers climbing between takes is fine — only the drift matters.
+**Reset between takes:** `curl -X POST http://localhost:8787/api/approve` — and stop there. That
+single command restores the revoked component *and* returns every device to amber, which is
+exactly the starting state you want. Do **not** attest afterwards, or you will be back to the
+un-filmable all-green state. Epoch numbers climbing between takes is fine; only the drift matters.
 
 ---
 
@@ -49,9 +77,9 @@ devices back to green (~5 min). Epoch numbers climbing between takes is fine —
 ## Beat 1 · 0:20–1:00 · It passes
 
 ### 🎬 DO
-1. Click **Attest now** on *Sensor gateway · 02*.
-2. Let it run — the button reads "Generating proof…".
-3. When the card turns green, point at the **Device-bound proof** label.
+1. Start on *Sensor gateway · 02* showing **amber**.
+2. Click **Attest now**. The button reads "Generating proof…" for 30–60 s.
+3. Card flips **amber → green, COMPLIANT**. Point at the **Device-bound proof** label.
 4. Cut to the explorer, show the transaction.
 5. Scroll the on-chain state slowly.
 
