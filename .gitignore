@@ -42,3 +42,4 @@ scratch-*
 .claude/
 .vercel
 .env*
+docs/media/annot*.html
