@@ -18,7 +18,15 @@ at the bottom: it is the whole script with no stage directions.
    Otherwise, in a **WSL terminal:** `cd /root/nightseal && npm run serve` and wait for
    `operator service on http://127.0.0.1:8787`. **Do not record before that line appears** — the
    wallet re-syncs for ~10 minutes on every start.
-3. **Browser left:** http://localhost:8787 · **Browser right:** the contract on `preview.midnightexplorer.com`.
+3. **One browser window with two tabs — not two windows side by side.** Side-by-side halves the
+   width, and the Merkle roots are long numbers that have to stay readable.
+   - **Tab 1:** http://localhost:8787 — the dashboard, where most of the video lives.
+   - **Tab 2:** the contract on `preview.midnightexplorer.com` — open it *before* you record.
+
+   Switch with **Ctrl+Tab**. Nothing needs both on screen at once: the flagship shot — firmware
+   root unchanged beside the changed component root — is entirely on the dashboard. While
+   recording, don't click the explorer links in the dashboard's log; they spawn extra tabs.
+   Switch to tab 2 and press **F5** instead.
 4. **Check the starting state — this is the one thing that ruins a take.** Every device must read
    **RE-ATTESTATION REQUIRED** (amber), *not* COMPLIANT. See below.
 5. Hide bookmarks, turn on Focus Assist, 1080p. **Never show the WSL terminal or `.env` on camera.**
@@ -91,7 +99,7 @@ un-filmable all-green state. Epoch numbers climbing between takes is fine; only 
 2. Click **Attest now** on *Router · fleet-07*. Wait again → also flips **amber → green**.
    **Attest both.** The viewer must see Router pass, or beat 3 makes no sense.
 3. Point at the **Device-bound proof** label on a green card.
-4. Cut to the explorer, show one of the transactions.
+4. Ctrl+Tab to the explorer, press **F5**, show one of the transactions, then Ctrl+Tab back.
 5. Scroll the on-chain state slowly.
 
 ### 🎤 SAY
@@ -120,7 +128,8 @@ un-filmable all-green state. Epoch numbers climbing between takes is fine; only 
    - the **component capability root** — it changes,
    - the **firmware capability root** — **it does not change**. Hold on this.
 3. Note every device dropping to amber.
-4. Cut to the explorer, show the new transaction.
+4. Ctrl+Tab to the explorer, press **F5**, and point at the **Entry Point** field: it reads
+   `updateComponentLeaf` — the very same name the *approval* transactions carry.
 
 ### 🎤 SAY
 > "Now a vulnerability lands — not in the firmware itself, but in one component inside it. The
@@ -134,9 +143,11 @@ un-filmable all-green state. Epoch numbers climbing between takes is fine; only 
 >
 > *(over the explorer)*
 >
-> "And here is what the outside world sees: one update, carrying one opaque value. It could be
-> an approval. It could be a revocation. It could be routine maintenance. There is no way to
-> tell which — so an attacker cannot use this chain to learn that a vulnerability exists."
+> "And here is what the outside world sees. The entry point reads 'update component leaf' —
+> which is exactly what it read when these components were approved in the first place. Same
+> circuit, same shape, one opaque value. It could be an approval. It could be a revocation. It
+> could be routine maintenance. There is no way to tell which — so an attacker cannot watch this
+> chain to learn that a vulnerability exists."
 
 ---
 
@@ -210,9 +221,11 @@ Read straight through; the stage directions are gone. Roughly 420 words ≈ 3 mi
 > byte for byte identical. No firmware was touched, nothing was marked unsafe, and no list of
 > affected products was published anywhere.
 >
-> And here is what the outside world sees: one update, carrying one opaque value. It could be an
-> approval. It could be a revocation. It could be routine maintenance. There is no way to tell
-> which — so an attacker cannot use this chain to learn that a vulnerability exists.
+> And here is what the outside world sees. The entry point reads 'update component leaf' — which
+> is exactly what it read when these components were approved in the first place. Same circuit,
+> same shape, one opaque value. It could be an approval. It could be a revocation. It could be
+> routine maintenance. There is no way to tell which — so an attacker cannot watch this chain to
+> learn that a vulnerability exists.
 >
 > Something else just happened. Before revoking, we generated a fresh attestation for that router
 > and held onto it. Then we submitted it — after the revocation. That proof was genuine; it is
