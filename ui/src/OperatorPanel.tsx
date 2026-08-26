@@ -46,25 +46,26 @@ export const OperatorPanel = ({
               </p>
             </div>
             <div className="component-actions">
-              <button
-                type="button"
-                className="danger"
-                onClick={() => onRevokeComponent(component)}
-                disabled={busy === label}
-              >
-                {busy === label ? 'Moving root…' : 'Revoke component (CVE)'}
-              </button>
               {victim && (
                 <button
                   type="button"
-                  className="ghost"
-                  title="Prove an attestation now, revoke this component, then submit the stale proof. The Midnight ledger rejects it — no application logic involved."
+                  className="danger"
+                  title="Prove an attestation now, revoke this component, then submit the stale proof. The Midnight ledger rejects it — no application logic involved. This is the demo action."
                   onClick={() => onReplay(component, victim.id)}
                   disabled={busy === replayLabel}
                 >
                   {busy === replayLabel ? 'Submitting stale proof…' : 'Revoke + replay stale proof'}
                 </button>
               )}
+              <button
+                type="button"
+                className="ghost"
+                title="Revoke without demonstrating the consensus rejection. Once revoked, the replay above can no longer build its proof."
+                onClick={() => onRevokeComponent(component)}
+                disabled={busy === label}
+              >
+                {busy === label ? 'Moving root…' : 'Revoke only'}
+              </button>
             </div>
           </li>
         );
