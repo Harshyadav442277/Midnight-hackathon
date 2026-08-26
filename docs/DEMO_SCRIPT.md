@@ -13,7 +13,11 @@ at the bottom: it is the whole script with no stage directions.
 ## Before you press record
 
 1. **Windows PowerShell:** `docker start nightseal-proof-server` — check http://localhost:6300/ answers.
-2. **WSL terminal:** `cd /root/nightseal && npm run serve` — wait for `operator service on http://127.0.0.1:8787`. **Do not record before this line appears** (the wallet re-syncs for ~10 minutes).
+2. **Operator service.** First check whether one is already running — open http://localhost:8787.
+   If the dashboard loads, **skip this step**; starting a second one fails with a port conflict.
+   Otherwise, in a **WSL terminal:** `cd /root/nightseal && npm run serve` and wait for
+   `operator service on http://127.0.0.1:8787`. **Do not record before that line appears** — the
+   wallet re-syncs for ~10 minutes on every start.
 3. **Browser left:** http://localhost:8787 · **Browser right:** the contract on `preview.midnightexplorer.com`.
 4. **Check the starting state — this is the one thing that ruins a take.** Every device must read
    **RE-ATTESTATION REQUIRED** (amber), *not* COMPLIANT. See below.
@@ -44,6 +48,12 @@ curl -s http://localhost:8787/api/state
 
 Every device should show `RE-ATTESTATION REQUIRED`.
 
+*(On Windows PowerShell write `curl.exe` rather than `curl`.)*
+
+**About the third card.** The demo uses *Sensor gateway · 02* (clean) and *Router · fleet-07*
+(secretly depends on the vulnerable component). *Edge camera · 11* just sits amber throughout —
+it is a device that has not checked in. Leave it alone; don't draw attention to it.
+
 **Timing — plan the edit around it.** Every action is a real ZK proof, so nothing is instant:
 
 | Action | Roughly |
@@ -64,7 +74,7 @@ un-filmable all-green state. Epoch numbers climbing between takes is fine; only 
 ## Beat 0 · 0:00–0:20 · The stake
 
 ### 🎬 DO
-1. Show the dashboard, both cards green. Stay still — no clicking yet.
+1. Show the dashboard with every card **amber**. Stay still — no clicking yet.
 
 ### 🎤 SAY
 > "Your router's manufacturer must prove its firmware is clean — without publishing a map of its
@@ -77,21 +87,22 @@ un-filmable all-green state. Epoch numbers climbing between takes is fine; only 
 ## Beat 1 · 0:20–1:00 · It passes
 
 ### 🎬 DO
-1. Start on *Sensor gateway · 02* showing **amber**.
-2. Click **Attest now**. The button reads "Generating proof…" for 30–60 s.
-3. Card flips **amber → green, COMPLIANT**. Point at the **Device-bound proof** label.
-4. Cut to the explorer, show the transaction.
+1. Click **Attest now** on *Sensor gateway · 02*. Wait 30–60 s → flips **amber → green**.
+2. Click **Attest now** on *Router · fleet-07*. Wait again → also flips **amber → green**.
+   **Attest both.** The viewer must see Router pass, or beat 3 makes no sense.
+3. Point at the **Device-bound proof** label on a green card.
+4. Cut to the explorer, show one of the transactions.
 5. Scroll the on-chain state slowly.
 
 ### 🎤 SAY
-> "This device is proving three things in a single proof: that it holds the secret it was
-> registered with, that its firmware is on the current approved list, and that every component
-> built into that firmware is approved too. All of it stays private — the proof is generated
-> here, on the device's side of the line."
+> "Each of these devices is proving three things in a single proof: that it holds the secret it
+> was registered with, that its firmware is on the current approved list, and that every
+> component built into that firmware is approved too. All of it stays private — the proof is
+> generated here, on the device's side of the line."
 >
-> *(when green)*
+> *(once both are green)*
 >
-> "The chain shows a yes. It never shows the firmware."
+> "Both devices are compliant. The chain shows a yes. It never shows the firmware."
 >
 > *(over the explorer)*
 >
@@ -136,10 +147,11 @@ un-filmable all-green state. Epoch numbers climbing between takes is fine; only 
 2. Point at the red card: **"Rejected by consensus, not by this dashboard."**
 
 ### 🎤 SAY
-> "Something else just happened. Before revoking, we generated a valid attestation and held onto
-> it. Then we submitted it — after the revocation. That proof was genuine. It was accepted
-> moments earlier. The network re-checked it against the present state and threw the transaction
-> out. That rejection is not our server's opinion. That is consensus."
+> "Something else just happened. Before revoking, we generated a fresh attestation for that
+> router and held onto it. Then we submitted it — after the revocation. That proof was genuine;
+> it is the same device you watched pass a minute ago. The network re-checked it against the
+> present state and threw the transaction out. That rejection is not our server's opinion. That
+> is consensus."
 
 ---
 
@@ -182,12 +194,12 @@ Read straight through; the stage directions are gone. Roughly 420 words ≈ 3 mi
 > publishing that proof hands attackers a target map. NightSeal does both at once: it proves
 > compliance, and reveals nothing.
 >
-> This device is proving three things in a single proof: that it holds the secret it was
-> registered with, that its firmware is on the current approved list, and that every component
-> built into that firmware is approved too. All of it stays private — the proof is generated
-> here, on the device's side of the line.
+> Each of these devices is proving three things in a single proof: that it holds the secret it
+> was registered with, that its firmware is on the current approved list, and that every
+> component built into that firmware is approved too. All of it stays private — the proof is
+> generated here, on the device's side of the line.
 >
-> The chain shows a yes. It never shows the firmware.
+> Both devices are compliant. The chain shows a yes. It never shows the firmware.
 >
 > A device id, a status, an epoch, two cryptographic roots. No hash. No version. No supplier.
 >
@@ -202,10 +214,11 @@ Read straight through; the stage directions are gone. Roughly 420 words ≈ 3 mi
 > approval. It could be a revocation. It could be routine maintenance. There is no way to tell
 > which — so an attacker cannot use this chain to learn that a vulnerability exists.
 >
-> Something else just happened. Before revoking, we generated a valid attestation and held onto
-> it. Then we submitted it — after the revocation. That proof was genuine. It was accepted
-> moments earlier. The network re-checked it against the present state and threw the transaction
-> out. That rejection is not our server's opinion. That is consensus.
+> Something else just happened. Before revoking, we generated a fresh attestation for that router
+> and held onto it. Then we submitted it — after the revocation. That proof was genuine; it is
+> the same device you watched pass a minute ago. The network re-checked it against the present
+> state and threw the transaction out. That rejection is not our server's opinion. That is
+> consensus.
 >
 > The clean device proves itself again immediately and goes green. The affected one cannot — and
 > notice its firmware is still approved. Nothing looked it up on a vulnerability list. It simply
